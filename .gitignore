@@ -50,3 +50,7 @@ node_modules/
 .git
 
 .github/
+
+# SQL debug/test files
+*.sql
+!supabase/**/*.sql
