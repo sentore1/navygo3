@@ -62,13 +62,52 @@ serve(async (req) => {
       });
     }
 
-    // Check if OpenAI API key is available
-    const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiApiKey) {
-      console.log("OpenAI API key not found, using fallback generation");
-      // Generate a fallback response
-      const fallbackGoal = generateFallbackGoal(prompt, difficulty);
+    // Get AI settings from database
+    const { data: aiSettings, error: settingsError } = await supabaseClient
+      .from('ai_settings')
+      .select('*')
+      .single();
 
+    if (settingsError) {
+      console.log("Error fetching AI settings:", settingsError);
+    }
+
+    // Check if AI is enabled
+    if (!aiSettings?.ai_enabled) {
+      console.log("AI is disabled, using fallback generation");
+      const fallbackGoal = generateFallbackGoal(prompt, difficulty);
+      return new Response(JSON.stringify(fallbackGoal), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const provider = aiSettings?.ai_provider || 'openai';
+    const model = aiSettings?.ai_model || 'gpt-3.5-turbo';
+
+    console.log(`Using AI provider: ${provider}, model: ${model}`);
+
+    // Get the appropriate API key based on provider
+    let apiKey = '';
+    let apiUrl = '';
+    
+    if (provider === 'openai') {
+      apiKey = Deno.env.get("OPENAI_API_KEY") || '';
+      apiUrl = "https://api.openai.com/v1/chat/completions";
+    } else if (provider === 'groq') {
+      apiKey = Deno.env.get("GROQ_API_KEY") || '';
+      apiUrl = "https://api.groq.com/openai/v1/chat/completions";
+    } else if (provider === 'grok') {
+      apiKey = Deno.env.get("GROK_API_KEY") || '';
+      apiUrl = "https://api.x.ai/v1/chat/completions";
+    } else if (provider === 'gemini') {
+      apiKey = Deno.env.get("GEMINI_API_KEY") || '';
+      // Gemini uses a different API structure, we'll handle it separately
+    }
+
+    if (!apiKey) {
+      console.log(`${provider} API key not found, using fallback generation`);
+      const fallbackGoal = generateFallbackGoal(prompt, difficulty);
       return new Response(JSON.stringify(fallbackGoal), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -76,48 +115,98 @@ serve(async (req) => {
     }
 
     try {
-      console.log("Calling OpenAI API");
-      // Call OpenAI API
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${openaiApiKey}`,
+      console.log(`Calling ${provider} API with model ${model}`);
+      
+      // Handle Gemini separately as it has a different API structure
+      if (provider === 'gemini') {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `You are a goal-setting assistant. Create a structured goal with milestones based on the user's input. The difficulty level is ${difficulty}. Format your response as JSON with the following structure: { "title": "Goal Title", "description": "Goal description", "milestones": [{ "id": "unique-id", "title": "Milestone title", "description": "Milestone description", "completed": false }] }. For ${difficulty} difficulty, create ${difficulty === "easy" ? "3-4" : difficulty === "medium" ? "5-6" : "7-8"} milestones.\n\nUser request: ${prompt}`
+                }]
+              }],
+              generationConfig: {
+                temperature: 0.7,
+              }
+            }),
           },
-          body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [
-              {
-                role: "system",
-                content: `You are a goal-setting assistant. Create a structured goal with milestones based on the user's input. The difficulty level is ${difficulty}. Format your response as JSON with the following structure: { "title": "Goal Title", "description": "Goal description", "milestones": [{ "id": "unique-id", "title": "Milestone title", "description": "Milestone description", "completed": false }] }. For ${difficulty} difficulty, create ${difficulty === "easy" ? "3-4" : difficulty === "medium" ? "5-6" : "7-8"} milestones.`,
-              },
-              {
-                role: "user",
-                content: prompt,
-              },
-            ],
-            temperature: 0.7,
-          }),
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Gemini API error:", errorData);
+          throw new Error(`Gemini API error: ${errorData.error?.message || "Unknown error"}`);
+        }
+
+        const geminiResponse = await response.json();
+        const content = geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!content) {
+          throw new Error("No content in Gemini response");
+        }
+
+        // Parse and return the goal data
+        const jsonMatch = content.match(/```json\n([\s\S]*)\n```/) || content.match(/```([\s\S]*)```/) || [null, content];
+        const jsonContent = jsonMatch[1] || content;
+        const goalData = JSON.parse(jsonContent);
+
+        if (!goalData.title || !Array.isArray(goalData.milestones)) {
+          throw new Error("Invalid response structure");
+        }
+
+        goalData.targetDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        return new Response(JSON.stringify(goalData), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // For OpenAI-compatible APIs (OpenAI, Groq, Grok)
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
         },
-      );
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            {
+              role: "system",
+              content: `You are a goal-setting assistant. Create a structured goal with milestones based on the user's input. The difficulty level is ${difficulty}. Format your response as JSON with the following structure: { "title": "Goal Title", "description": "Goal description", "milestones": [{ "id": "unique-id", "title": "Milestone title", "description": "Milestone description", "completed": false }] }. For ${difficulty} difficulty, create ${difficulty === "easy" ? "3-4" : difficulty === "medium" ? "5-6" : "7-8"} milestones.`,
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("OpenAI API error:", errorData);
+        console.error(`${provider} API error:`, errorData);
         throw new Error(
-          `OpenAI API error: ${errorData.error?.message || "Unknown error"}`,
+          `${provider} API error: ${errorData.error?.message || "Unknown error"}`,
         );
       }
 
-      const openaiResponse = await response.json();
-      console.log("OpenAI response received");
+      const apiResponse = await response.json();
+      console.log(`${provider} response received`);
 
-      const content = openaiResponse.choices[0]?.message?.content;
+      const content = apiResponse.choices[0]?.message?.content;
 
       if (!content) {
-        throw new Error("No content in OpenAI response");
+        throw new Error(`No content in ${provider} response`);
       }
 
       // Parse the JSON response
@@ -144,7 +233,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } catch (parseError) {
-        console.error("Error parsing OpenAI response:", parseError);
+        console.error(`Error parsing ${provider} response:`, parseError);
         console.error("Raw content:", content);
 
         // Fall back to generating a goal
@@ -154,8 +243,8 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-    } catch (openaiError) {
-      console.error("Error calling OpenAI:", openaiError);
+    } catch (apiError) {
+      console.error(`Error calling ${provider}:`, apiError);
       // Fall back to generating a goal
       const fallbackGoal = generateFallbackGoal(prompt, difficulty);
       return new Response(JSON.stringify(fallbackGoal), {

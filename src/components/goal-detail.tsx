@@ -141,7 +141,7 @@ export default function GoalDetail({
     <Card className="w-full border-0 shadow-none">
       <CardHeader className="pb-2">
         <CardTitle className="text-2xl flex items-center gap-2">
-          <Target className="h-6 w-6 text-blue-600" />
+          <Target className="h-6 w-6 text-black" />
           {goal.title}
         </CardTitle>
         <CardDescription className="flex items-center gap-4">
@@ -165,60 +165,60 @@ export default function GoalDetail({
           }}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
             <div>
-              <h3 className="text-lg font-medium mb-2">Description</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-sm font-medium mb-1 text-muted-foreground">Description</h3>
+              <p className="text-sm">
                 {goal.description || "No description provided."}
               </p>
             </div>
 
             <div>
-              <h3 className="text-lg font-medium mb-2">Progress</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
+              <h3 className="text-sm font-medium mb-1 text-muted-foreground">Progress</h3>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
                   <span>Overall Completion</span>
                   <span className="font-medium">{goal.progress}%</span>
                 </div>
                 <div className="relative">
                   <Progress
                     value={goal.progress}
-                    className={`h-3 ${goal.progress >= 100 ? "bg-green-600" : isUpdatedToday() ? "bg-green-500" : "bg-amber-500"}`}
+                    className={`h-2 ${goal.progress >= 100 ? "bg-green-600" : isUpdatedToday() ? "bg-green-500" : "bg-amber-500"}`}
                   />
                   {goal.streak > 0 && (
-                    <div className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                       {goal.streak}
                     </div>
                   )}
                 </div>
 
                 {!isUpdatedToday() && (
-                  <div className="mt-2 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded-md">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    <span>
-                      Progress decreases by 5% each day without logging
-                    </span>
+                  <div className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+                    <AlertCircle className="h-3 w-3" />
+                    <span>Progress decreases by 5% each day without logging</span>
                   </div>
                 )}
               </div>
             </div>
 
             <div>
-              <h3 className="text-lg font-medium mb-2">Stats</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold">{goal.streak}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Day Streak
+              <h3 className="text-sm font-medium mb-1 text-muted-foreground">Stats</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {goal.progress < 100 && (
+                  <div className="border rounded-lg p-2">
+                    <div className="text-xl font-bold">{goal.streak}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Day Streak
+                    </div>
                   </div>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold">
+                )}
+                <div className={`border rounded-lg p-2 ${goal.progress >= 100 ? 'col-span-2' : ''}`}>
+                  <div className="text-xl font-bold">
                     {goal.milestones.filter((m) => m.completed).length}/
                     {goal.milestones.length}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     Milestones Completed
                   </div>
                 </div>
@@ -227,28 +227,30 @@ export default function GoalDetail({
 
             {goal.progress < 100 ? (
               <div>
-                <h3 className="text-lg font-medium mb-2">Log Progress</h3>
-                <div className="space-y-2">
+                <h3 className="text-sm font-medium mb-1 text-muted-foreground">Log Progress</h3>
+                <div className="space-y-1">
                   <Textarea
                     placeholder="Add notes about today's progress (optional)"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
+                    rows={2}
                     disabled={isLoggingProgress || isUpdatedToday()}
+                    className="text-sm"
                   />
                   <Button
                     onClick={handleLogProgress}
                     disabled={isLoggingProgress || isUpdatedToday()}
                     className="w-full"
+                    size="sm"
                   >
                     {isLoggingProgress ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                         Logging Progress...
                       </>
                     ) : isUpdatedToday() ? (
                       <>
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        <CheckCircle2 className="mr-2 h-3 w-3" />
                         Progress Logged Today
                       </>
                     ) : (
@@ -259,14 +261,14 @@ export default function GoalDetail({
               </div>
             ) : (
               <div>
-                <h3 className="text-lg font-medium mb-2">Goal Status</h3>
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200 flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <h3 className="text-sm font-medium mb-1 text-muted-foreground">Goal Status</h3>
+                <div className="bg-green-500 p-2 rounded-lg border-2 border-green-600 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-white" />
                   <div>
-                    <p className="font-medium text-green-800">
+                    <p className="font-medium text-white text-xs">
                       Goal Completed!
                     </p>
-                    <p className="text-sm text-green-700">
+                    <p className="text-xs text-green-50">
                       Congratulations on achieving your goal.
                     </p>
                   </div>
@@ -276,17 +278,17 @@ export default function GoalDetail({
           </div>
 
           <div>
-            <h3 className="text-lg font-medium mb-4">Milestones</h3>
+            <h3 className="text-sm font-medium mb-2 text-muted-foreground">Milestones</h3>
             {goal.milestones.length === 0 ? (
-              <div className="text-center py-8 bg-muted/30 rounded-lg">
-                <p className="text-muted-foreground">No milestones defined</p>
+              <div className="text-center py-6 border rounded-lg">
+                <p className="text-sm text-muted-foreground">No milestones defined</p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                 {goal.milestones.map((milestone, index) => (
                   <div key={milestone.id} className="space-y-1">
                     <div className="flex items-start gap-2">
-                      <div className="relative mt-1">
+                      <div className="relative mt-0.5">
                         <Checkbox
                           id={`milestone-${milestone.id}`}
                           checked={milestone.completed}
@@ -310,19 +312,19 @@ export default function GoalDetail({
                       <div className="flex-1">
                         <label
                           htmlFor={`milestone-${milestone.id}`}
-                          className={`font-medium ${milestone.completed ? "line-through text-muted-foreground" : ""}`}
+                          className={`text-sm font-medium ${milestone.completed ? "line-through text-muted-foreground" : ""}`}
                         >
                           {milestone.title}
                         </label>
                         {milestone.description && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {milestone.description}
                           </p>
                         )}
                       </div>
                     </div>
                     {index < goal.milestones.length - 1 && (
-                      <Separator className="my-2" />
+                      <Separator className="my-1" />
                     )}
                   </div>
                 ))}

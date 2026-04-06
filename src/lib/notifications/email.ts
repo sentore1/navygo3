@@ -24,7 +24,7 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
 
     switch (type) {
       case 'goal_reminder':
-        subject = '⏰ Daily Goal Reminder';
+        subject = 'Daily Goal Reminder';
         html = `
           <h2>Don't forget your goals today!</h2>
           <p>Hi ${data.userName},</p>
@@ -36,7 +36,7 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
         break;
 
       case 'achievement_unlocked':
-        subject = '🎉 Achievement Unlocked!';
+        subject = 'Achievement Unlocked!';
         html = `
           <h2>Congratulations!</h2>
           <p>Hi ${data.userName},</p>
@@ -49,7 +49,7 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
         break;
 
       case 'account_update':
-        subject = '✅ Account Updated';
+        subject = 'Account Updated';
         html = `
           <h2>Account Update</h2>
           <p>Hi ${data.userName},</p>
@@ -59,7 +59,7 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
         break;
 
       case 'subscription_update':
-        subject = '💳 Subscription Update';
+        subject = 'Subscription Update';
         html = `
           <h2>Subscription Update</h2>
           <p>Hi ${data.userName},</p>

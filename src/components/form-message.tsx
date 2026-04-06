@@ -20,10 +20,9 @@ export function FormMessage({ message }: { message: Message }) {
         </Alert>
       )}
       {"error" in message && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{message.error}</AlertDescription>
-        </Alert>
+        <div className="text-red-600 text-sm text-center">
+          {message.error}
+        </div>
       )}
       {"message" in message && (
         <Alert>

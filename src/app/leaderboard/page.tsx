@@ -86,21 +86,9 @@ export default function LeaderboardPage() {
       <>
         <HeroHeader />
         <div className="container mx-auto py-10 pt-24">
-          <Card className="w-full max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle>Loading Leaderboard...</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className="h-20 bg-muted rounded-lg animate-pulse"
-                  ></div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="h-4 w-4 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
         <Footer />
       </>

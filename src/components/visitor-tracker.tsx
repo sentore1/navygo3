@@ -65,21 +65,40 @@ export default function VisitorTracker() {
 
   const getGeolocation = async () => {
     try {
-      // Use a free IP geolocation API
-      const response = await fetch("https://ipapi.co/json/");
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          ip_address: data.ip,
-          country: data.country_name,
-          country_code: data.country_code,
-          region: data.region,
-          city: data.city,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          timezone: data.timezone,
-        };
+      // Try multiple geolocation APIs with fallback
+      // First try: ipapi.co with no-cors mode won't work, so we skip it in development
+      if (process.env.NODE_ENV === 'production') {
+        try {
+          const response = await fetch("https://ipapi.co/json/");
+          if (response.ok) {
+            const data = await response.json();
+            return {
+              ip_address: data.ip,
+              country: data.country_name,
+              country_code: data.country_code,
+              region: data.region,
+              city: data.city,
+              latitude: data.latitude,
+              longitude: data.longitude,
+              timezone: data.timezone,
+            };
+          }
+        } catch (e) {
+          // Fallback to next option
+        }
       }
+      
+      // Fallback: Use timezone as a basic location indicator
+      return {
+        ip_address: null,
+        country: null,
+        country_code: null,
+        region: null,
+        city: null,
+        latitude: null,
+        longitude: null,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
     } catch (error) {
       console.error("Error fetching geolocation:", error);
     }

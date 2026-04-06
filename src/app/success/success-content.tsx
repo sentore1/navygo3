@@ -69,9 +69,12 @@ export default function SuccessContent() {
       <div className="max-w-md mx-auto text-center">
         {status === "loading" && (
           <>
-            <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto mb-4" />
+            <div className="relative h-24 w-24 mx-auto mb-6">
+              <div className="absolute inset-0 rounded-full border-4 border-purple-200"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-600 animate-spin"></div>
+              <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-indigo-600 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
+            </div>
             <h1 className="text-2xl font-semibold mb-2">Processing...</h1>
-            <p className="text-muted-foreground">{message}</p>
             {retryCount > 0 && (
               <p className="text-xs text-muted-foreground mt-2">
                 Attempt {retryCount} of {maxRetries}

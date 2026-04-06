@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
@@ -43,6 +43,29 @@ export default function AIGoalCreator({
   const [targetDate, setTargetDate] = useState<Date | undefined>(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   ); // Default to 30 days from now
+  const [aiEnabled, setAiEnabled] = useState(true);
+
+  useEffect(() => {
+    checkAIStatus();
+  }, []);
+
+  const checkAIStatus = async () => {
+    try {
+      const response = await fetch('/api/admin/ai-settings');
+      const data = await response.json();
+      if (data.success) {
+        const providerConfigured = data.settings.current_provider_configured;
+        setAiEnabled(data.settings.ai_enabled && providerConfigured);
+        if (!data.settings.ai_enabled) {
+          setError('AI goal creation is currently disabled by the administrator.');
+        } else if (!providerConfigured) {
+          setError(`AI service is not configured. The ${data.settings.ai_provider} API key is missing.`);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking AI status:', error);
+    }
+  };
 
   const examplePrompts = {
     easy: "I want to read more books this year",
@@ -51,6 +74,11 @@ export default function AIGoalCreator({
   };
 
   const handleGenerateGoal = async () => {
+    if (!aiEnabled) {
+      setError('AI goal creation is not available at this time.');
+      return;
+    }
+
     if (!prompt.trim()) {
       setError("Please enter a goal description");
       return;
@@ -683,7 +711,7 @@ export default function AIGoalCreator({
           <Button
             size="sm"
             onClick={handleGenerateGoal}
-            disabled={loading || !prompt.trim()}
+            disabled={loading || !prompt.trim() || !aiEnabled}
             className="gap-1.5 text-xs sm:text-sm"
           >
             {loading ? (

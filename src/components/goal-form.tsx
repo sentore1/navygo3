@@ -79,16 +79,24 @@ export default function GoalForm({
     setIsSubmitting(true);
 
     try {
+      const filteredMilestones = milestones.filter((m) => m.title.trim() !== "");
+      
       const goalData = {
         title,
         description,
-        milestones: milestones.filter((m) => m.title.trim() !== ""),
+        milestones: filteredMilestones,
         createdAt: new Date().toISOString(),
         targetDate: date ? date.toISOString() : null,
         progress: 0,
         streak: 0,
         lastUpdated: null,
       };
+
+      console.log('Submitting goal with milestones:', {
+        title: goalData.title,
+        milestoneCount: filteredMilestones.length,
+        milestones: filteredMilestones
+      });
 
       await onSubmit(goalData);
 

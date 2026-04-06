@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       <body>
         <div class="container">
           <div class="header">
-            <h1>📬 New Contact Form Submission</h1>
+            <h1>New Contact Form Submission</h1>
           </div>
           <div class="content">
             <p>You have received a new message from your website contact form.</p>
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
             </div>
 
             <p style="margin-top: 24px; color: #718096; font-size: 14px;">
-              💡 Reply directly to this email to respond to ${name}.
+              Reply directly to this email to respond to ${name}.
             </p>
           </div>
           <div class="footer">
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
       <body>
         <div class="container">
           <div class="header">
-            <h1>✅ Message Received!</h1>
+            <h1>Message Received!</h1>
           </div>
           <div class="content">
             <p>Hi ${name},</p>

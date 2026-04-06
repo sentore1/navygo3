@@ -4,13 +4,27 @@ import Footer from "@/components/footer";
 import { createClient } from "../../../supabase/server";
 import { cookies } from "next/headers";
 
+interface PolarPrice {
+    id: string;
+    price_amount: number;
+    price_currency: string;
+    recurring_interval: string;
+}
+
+interface PolarProduct {
+    id: string;
+    name: string;
+    description: string;
+    prices: PolarPrice[];
+}
+
 export default async function Pricing() {
     const cookieStore = cookies();
     const supabase = await createClient(cookieStore);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     // Fetch Polar products from API
-    let polarProducts = [];
+    let polarProducts: PolarProduct[] = [];
     try {
         const polarApiKey = process.env.POLAR_API_KEY;
         const polarOrgId = process.env.POLAR_ORGANIZATION_ID;
@@ -36,12 +50,12 @@ export default async function Pricing() {
             if (response.ok) {
                 const data = await response.json();
                 // Filter to only show products with recurring prices
-                polarProducts = (data.items || []).filter(product => 
-                    product.prices?.some(price => price.recurring_interval === 'month' || price.recurring_interval === 'year')
+                polarProducts = (data.items || []).filter((product: any) => 
+                    product.prices?.some((price: any) => price.recurring_interval === 'month' || price.recurring_interval === 'year')
                 );
                 console.log('✅ Polar products fetched:', polarProducts.length);
                 if (polarProducts.length > 0) {
-                    console.log('Products:', polarProducts.map(p => p.name).join(', '));
+                    console.log('Products:', polarProducts.map((p: PolarProduct) => p.name).join(', '));
                 }
             } else {
                 const errorText = await response.text();

@@ -227,7 +227,7 @@ export default function SettingsPage() {
               Settings
             </CardTitle>
             <CardDescription>
-              Loading your profile information...
+              Loading...
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -314,18 +314,43 @@ export default function SettingsPage() {
                           variant="outline"
                           size="sm"
                           onClick={async () => {
-                            const seed = Math.random().toString(36).substring(7);
-                            const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
-                            setFormData({
-                              ...formData,
-                              avatar_url: avatarUrl,
-                            });
-                            // Auto-save to database
-                            if (user) {
-                              await supabase
-                                .from("users")
-                                .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
-                                .eq("id", user.id);
+                            try {
+                              const seed = Math.random().toString(36).substring(7);
+                              const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
+                              
+                              // Update local state first
+                              setFormData({
+                                ...formData,
+                                avatar_url: avatarUrl,
+                              });
+                              
+                              // Save to database
+                              if (user) {
+                                const { error } = await supabase
+                                  .from("users")
+                                  .update({ 
+                                    avatar_url: avatarUrl, 
+                                    updated_at: new Date().toISOString() 
+                                  })
+                                  .eq("id", user.id);
+                                
+                                if (error) {
+                                  console.error("Error saving avatar:", error);
+                                  alert("Failed to save avatar. Please try again.");
+                                } else {
+                                  // Update user state to reflect the change
+                                  setUser({
+                                    ...user,
+                                    profile: {
+                                      ...user.profile,
+                                      avatar_url: avatarUrl,
+                                    }
+                                  });
+                                }
+                              }
+                            } catch (error: any) {
+                              console.error("Error generating avatar:", error);
+                              alert(`Error: ${error.message}`);
                             }
                           }}
                         >
@@ -357,13 +382,37 @@ export default function SettingsPage() {
                             key={avatarStyle.style}
                             type="button"
                             onClick={async () => {
-                              setFormData({ ...formData, avatar_url: avatarUrl });
-                              // Auto-save to database
-                              if (user) {
-                                await supabase
-                                  .from("users")
-                                  .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
-                                  .eq("id", user.id);
+                              try {
+                                // Update local state first
+                                setFormData({ ...formData, avatar_url: avatarUrl });
+                                
+                                // Save to database
+                                if (user) {
+                                  const { error } = await supabase
+                                    .from("users")
+                                    .update({ 
+                                      avatar_url: avatarUrl, 
+                                      updated_at: new Date().toISOString() 
+                                    })
+                                    .eq("id", user.id);
+                                  
+                                  if (error) {
+                                    console.error("Error saving avatar:", error);
+                                    alert("Failed to save avatar. Please try again.");
+                                  } else {
+                                    // Update user state to reflect the change
+                                    setUser({
+                                      ...user,
+                                      profile: {
+                                        ...user.profile,
+                                        avatar_url: avatarUrl,
+                                      }
+                                    });
+                                  }
+                                }
+                              } catch (error: any) {
+                                console.error("Error selecting avatar:", error);
+                                alert(`Error: ${error.message}`);
                               }
                             }}
                             className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all hover:border-primary ${

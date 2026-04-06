@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { pricingConfig } from "@/config/pricing";
+import { createClient } from "../../supabase/client";
 
 interface PolarProduct {
     id: string;
@@ -35,9 +36,60 @@ export default function PricingClient({
     activePlan,
     activeSubscription 
 }: PricingClientProps) {
+    const supabase = createClient();
     const router = useRouter();
     const [billingCycle, setBillingCycle] = useState<"month" | "year">("month");
     const [loading, setLoading] = useState<string | null>(null);
+    const [productFeatures, setProductFeatures] = useState<Record<string, string[]>>({});
+    const [pricingSettings, setPricingSettings] = useState<any>(null);
+
+    // Load features from database
+    useEffect(() => {
+        loadPricingData();
+    }, []);
+
+    const loadPricingData = async () => {
+        try {
+            // Load features by polar product ID
+            const { data: featuresData } = await supabase
+                .from('pricing_product_features')
+                .select('*')
+                .eq('is_enabled', true)
+                .order('sort_order');
+
+            if (featuresData) {
+                const featuresByProduct: Record<string, string[]> = {};
+                featuresData.forEach((feature: any) => {
+                    // Group by both product ID and product name for flexibility
+                    const productId = feature.polar_product_id;
+                    const productName = feature.polar_product_name;
+                    
+                    if (!featuresByProduct[productId]) {
+                        featuresByProduct[productId] = [];
+                    }
+                    if (!featuresByProduct[productName]) {
+                        featuresByProduct[productName] = [];
+                    }
+                    
+                    featuresByProduct[productId].push(feature.feature_text);
+                    featuresByProduct[productName].push(feature.feature_text);
+                });
+                setProductFeatures(featuresByProduct);
+            }
+
+            // Load settings
+            const { data: settingsData } = await supabase
+                .from('pricing_settings')
+                .select('*')
+                .single();
+
+            if (settingsData) {
+                setPricingSettings(settingsData);
+            }
+        } catch (error) {
+            console.error('Error loading pricing data:', error);
+        }
+    };
 
     // Debug: Log products and their prices
     useEffect(() => {
@@ -111,7 +163,7 @@ export default function PricingClient({
                         Loading pricing plans...
                     </p>
                     <div className="flex justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <Loader2 className="h-3 w-3 animate-spin text-primary" />
                     </div>
                 </div>
             </div>
@@ -121,9 +173,11 @@ export default function PricingClient({
     return (
         <div className="container mx-auto px-4 py-16">
             <div className="text-center mb-12 max-w-3xl mx-auto">
-                <h1 className="text-4xl font-semibold mb-4">Choose Your Plan</h1>
+                <h1 className="text-4xl font-semibold mb-4">
+                    {pricingSettings?.page_title || 'Choose Your Plan'}
+                </h1>
                 <p className="text-sm text-muted-foreground mb-6">
-                    Select a plan that fits your goals. All plans include recurring billing.
+                    {pricingSettings?.page_subtitle || 'Select a plan that fits your goals. All plans include recurring billing.'}
                 </p>
                 <Tabs 
                     value={billingCycle} 
@@ -131,15 +185,19 @@ export default function PricingClient({
                     className="inline-flex mx-auto"
                 >
                     <TabsList className="rounded-full">
-                        <TabsTrigger value="month" className="rounded-full">
-                            Monthly
-                        </TabsTrigger>
-                        <TabsTrigger value="year" className="rounded-full">
-                            Yearly
-                            <span className="ml-2 text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full">
-                                Save 17%
-                            </span>
-                        </TabsTrigger>
+                        {(pricingSettings?.show_monthly !== false) && (
+                            <TabsTrigger value="month" className="rounded-full">
+                                Monthly
+                            </TabsTrigger>
+                        )}
+                        {(pricingSettings?.show_yearly !== false) && (
+                            <TabsTrigger value="year" className="rounded-full">
+                                Yearly
+                                <span className="ml-2 text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full">
+                                    Save {pricingSettings?.yearly_savings_percent || 17}%
+                                </span>
+                            </TabsTrigger>
+                        )}
                     </TabsList>
                 </Tabs>
             </div>
@@ -212,13 +270,23 @@ export default function PricingClient({
                                     </p>
                                 )}
                                 <ul className="space-y-2">
-                                    {/* Get features from config based on product name */}
+                                    {/* Get features from database or fallback to config */}
                                     {(() => {
-                                        const features = pricingConfig.productFeatures[product.name] || 
-                                                       pricingConfig.productFeatures[product.name.toLowerCase()] ||
-                                                       [];
+                                        // Try to get features from database by product ID first, then by name
+                                        const dbFeatures = productFeatures[product.id] || 
+                                                         productFeatures[product.name] || 
+                                                         productFeatures[product.name.toLowerCase()] ||
+                                                         [];
                                         
-                                        // If no features found, use default features
+                                        // Fallback to config if no database features
+                                        const configFeatures = pricingConfig.productFeatures[product.name] || 
+                                                             pricingConfig.productFeatures[product.name.toLowerCase()] ||
+                                                             [];
+                                        
+                                        // Use database features if available, otherwise use config
+                                        const features = dbFeatures.length > 0 ? dbFeatures : configFeatures;
+                                        
+                                        // If still no features, use default features
                                         const displayFeatures = features.length > 0 ? features : [
                                             "Goal Tracking",
                                             "Progress Visualization",

@@ -88,13 +88,14 @@ export default function GoalCard({
   return (
     <>
     <Card 
-      className={`w-full rounded-[2rem] border-2 border-gray-200 flex flex-col hover:shadow-lg transition-all duration-700 ease-out hover:scale-105 bg-white cursor-pointer relative ${
+      className={`w-full rounded-[2rem] border-2 border-gray-200 flex flex-col hover:shadow-lg transition-all duration-700 ease-out hover:scale-105 bg-white relative ${
         isExpanded ? 'h-auto' : 'h-48 overflow-hidden'
       }`}
       style={{
         transition: 'all 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease-out'
       }}
-      onClick={() => setIsExpanded(!isExpanded)}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
     >
       <CardHeader className="p-4 pb-2">
         <div className="flex justify-between items-start">

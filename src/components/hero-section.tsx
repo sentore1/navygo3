@@ -72,7 +72,7 @@ export default function HeroSection() {
             if (error) throw error;
             
             const visibilityMap: Record<string, boolean> = {};
-            data?.forEach(section => {
+            data?.forEach((section: any) => {
                 visibilityMap[section.section_key] = section.is_enabled;
             });
             setSections(visibilityMap);

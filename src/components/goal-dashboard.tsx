@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Plus, Loader2, Target, AlertCircle, Sparkles, Grid3X3, Clock, CheckCircle, UserCircle, Database, Award, CreditCard, Settings, LogOut, Menu, PartyPopper } from "lucide-react";
+import { Plus, Loader2, Target, AlertCircle, Sparkles, Grid3X3, Clock, CheckCircle, UserCircle, Database, Award, CreditCard, Settings, LogOut, Menu, PartyPopper, MoreVertical, Compass, Circle } from "lucide-react";
 import { ButtonGroup } from "./ui/button-group";
 import {
   DropdownMenu,
@@ -19,6 +19,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 import GoalCard from "./goal-card";
 import GoalForm from "./goal-form";
 import GoalDetail from "./goal-detail";
@@ -60,6 +66,7 @@ export default function GoalDashboard() {
   const [previousRank, setPreviousRank] = useState<string>("Recruit");
   const [isPro, setIsPro] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [userRank, setUserRank] = useState({
     rank: "Recruit",
     chevrons: 0,
@@ -145,11 +152,32 @@ export default function GoalDashboard() {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('subscription_status')
+      .select('subscription_status, role')
       .eq('id', user.id)
       .single();
 
+    // Admins always have AI access
+    if (userData?.role === 'admin') {
+      setIsPro(true);
+      return;
+    }
+
     if (userData?.subscription_status === 'active') {
+      // Check Polar subscriptions first
+      const { data: polarSub } = await supabase
+        .from('polar_subscriptions')
+        .select('product_id, status, has_ai_access')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      if (polarSub && polarSub.has_ai_access) {
+        // Polar subscription with AI access
+        setIsPro(true);
+        return;
+      }
+
+      // Check Kpay transactions (for Delta Goal and Pro plans)
       const { data: transaction } = await supabase
         .from('kpay_transactions')
         .select('plan_name')
@@ -157,9 +185,26 @@ export default function GoalDashboard() {
         .eq('status', 'completed')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
-      setIsPro(transaction?.plan_name === 'Pro');
+      if (transaction?.plan_name === 'Pro' || transaction?.plan_name === 'Delta Goal') {
+        setIsPro(true);
+        return;
+      }
+
+      // If we have a Polar subscription but no AI access, still check if it's a Pro plan
+      if (polarSub) {
+        // Check if the product has AI access enabled in polar_product_features
+        const { data: productFeature } = await supabase
+          .from('polar_product_features')
+          .select('has_ai_access')
+          .eq('product_id', polarSub.product_id)
+          .single();
+        
+        if (productFeature?.has_ai_access) {
+          setIsPro(true);
+        }
+      }
     }
   };
 
@@ -228,8 +273,9 @@ export default function GoalDashboard() {
 
   const handleCreateGoal = async (goalData: any) => {
     try {
-      // Check if user has reached the 50 goal limit for Basic plan
-      if (goals.length >= 50) {
+      // Check if user has reached the 50 goal limit for Basic plan (not Pro users)
+      if (!isPro && goals.length >= 50) {
+        setError("You've reached the 50 goal limit for Basic plan. Upgrade to Pro for unlimited goals!");
         window.location.href = '/pricing';
         return;
       }
@@ -242,7 +288,29 @@ export default function GoalDashboard() {
       );
 
       if (error) {
-        throw new Error(error.message);
+        console.error("Edge function error details:", error);
+        console.error("Error context:", error.context);
+        
+        // Try to parse the error message for more details
+        let errorMessage = error.message || "Failed to create goal";
+        if (error.context?.body) {
+          try {
+            const errorBody = JSON.parse(error.context.body);
+            errorMessage = errorBody.error || errorBody.hint || errorMessage;
+            console.error("Parsed error body:", errorBody);
+          } catch (e) {
+            // Could not parse error body
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Check if there was a warning about milestones
+      if (data?.warning) {
+        console.warn("Goal created with warning:", data.warning);
+        console.error("Milestone error:", data.milestoneError);
+        setError(`Goal created but milestones failed: ${data.milestoneError}`);
       }
 
       // Refresh goals to get proper database IDs
@@ -359,28 +427,64 @@ export default function GoalDashboard() {
           >
             <Plus className="h-4 w-4" /> <span className="hidden sm:inline">New Goal</span>
           </Button>
-          {isPro && (
-            <Button
-              onClick={() => setShowAIGoalCreator(true)}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 rounded-xl text-xs sm:px-3 py-1"
-            >
-              <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">AI Goal</span>
-            </Button>
+          {isPro ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setShowAIGoalCreator(true)}
+                    size="sm"
+                    className="flex items-center justify-center rounded-full p-0.5 bg-transparent hover:bg-gray-100 border-0"
+                  >
+                    <Sparkles className="h-3 w-3 text-black" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white text-black border border-gray-200 rounded-xl shadow-lg p-3 max-w-[120px]">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span className="text-[9px] bg-green-500 text-white px-2 py-0.5 rounded-full font-semibold">ACTIVE</span>
+                    <p className="text-xs font-medium text-center leading-tight">Create your goal with AI</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => window.location.href = '/pricing'}
+                    size="sm"
+                    className="flex items-center justify-center rounded-full p-0.5 bg-transparent hover:bg-gray-100 border-0"
+                  >
+                    <Sparkles className="h-3 w-3 text-black" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white text-black border border-gray-200 rounded-xl shadow-lg p-3 max-w-[120px]">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span className="text-[9px] bg-green-400 text-white px-2 py-0.5 rounded-full font-semibold">PRO</span>
+                    <p className="text-xs font-medium text-center leading-tight">Create your goal with AI</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
         </div>
       </div>
       
       <div className="fixed bottom-4 left-4 z-50">
-        <DropdownMenu>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="rounded-full shadow-lg h-8 w-8">
-              <Target className="h-4 w-4" />
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full shadow-lg h-8 w-8 hover:bg-transparent hover:border-current"
+              onMouseEnter={() => setMenuOpen(true)}
+            >
+              <Circle className="h-4 w-4" strokeWidth={4} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="top" className="text-sm rounded-2xl border-2">
+          <DropdownMenuContent align="start" side="top" className="text-sm rounded-2xl border-2" onMouseLeave={() => setMenuOpen(false)}>
             {isAdmin && (
               <DropdownMenuItem
                 onClick={() => window.location.href = '/admin'}
@@ -464,7 +568,7 @@ export default function GoalDashboard() {
             <Button
               size="sm"
               variant={activeTab === "in-progress" ? "default" : "ghost"}
-              onClick={() => setActiveTab("in-progress")}
+              onMouseEnter={() => setActiveTab("in-progress")}
               className="rounded-xl text-xs px-2 py-1"
             >
               In Progress
@@ -472,7 +576,7 @@ export default function GoalDashboard() {
             <Button
               size="sm"
               variant={activeTab === "completed" ? "default" : "ghost"}
-              onClick={() => setActiveTab("completed")}
+              onMouseEnter={() => setActiveTab("completed")}
               className="rounded-xl text-xs px-2 py-1"
             >
               Completed
@@ -480,7 +584,7 @@ export default function GoalDashboard() {
             <Button
               size="sm"
               variant={activeTab === "all" ? "default" : "ghost"}
-              onClick={() => setActiveTab("all")}
+              onMouseEnter={() => setActiveTab("all")}
               className="rounded-xl text-xs px-2 py-1"
             >
               All Goals

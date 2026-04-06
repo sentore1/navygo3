@@ -23,6 +23,8 @@ import {
   Star,
   ChevronDown,
   Circle,
+  Crown,
+  Gem,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -89,26 +91,16 @@ export default function AchievementsPage() {
       {
         id: "2",
         title: "Private",
-        description: "Reach 150 points",
-        icon: "chevron1",
-        progress: 0,
-        maxProgress: 150,
-        unlocked: false,
-        category: "goals",
-      },
-      {
-        id: "3",
-        title: "Corporal",
         description: "Reach 300 points",
-        icon: "chevron2",
+        icon: "chevron1",
         progress: 0,
         maxProgress: 300,
         unlocked: false,
         category: "goals",
       },
       {
-        id: "4",
-        title: "Sergeant",
+        id: "3",
+        title: "Corporal",
         description: "Reach 600 points",
         icon: "chevron3",
         progress: 0,
@@ -117,19 +109,19 @@ export default function AchievementsPage() {
         category: "goals",
       },
       {
-        id: "5",
-        title: "Lieutenant",
-        description: "Reach 1000 points",
+        id: "4",
+        title: "Sergeant",
+        description: "Reach 1,200 points",
         icon: "star1",
         progress: 0,
-        maxProgress: 1000,
+        maxProgress: 1200,
         unlocked: false,
         category: "goals",
       },
       {
-        id: "6",
-        title: "Captain",
-        description: "Reach 2000 points",
+        id: "5",
+        title: "Lieutenant",
+        description: "Reach 2,000 points",
         icon: "star2",
         progress: 0,
         maxProgress: 2000,
@@ -137,27 +129,67 @@ export default function AchievementsPage() {
         category: "goals",
       },
       {
-        id: "7",
-        title: "Major",
-        description: "Reach 3500 points",
+        id: "6",
+        title: "Captain",
+        description: "Reach 4,000 points",
         icon: "star3",
         progress: 0,
-        maxProgress: 3500,
+        maxProgress: 4000,
+        unlocked: false,
+        category: "goals",
+      },
+      {
+        id: "7",
+        title: "Major",
+        description: "Reach 7,000 points",
+        icon: "star4",
+        progress: 0,
+        maxProgress: 7000,
         unlocked: false,
         category: "goals",
       },
       {
         id: "8",
         title: "General",
-        description: "Reach 5000 points - Highest Rank!",
-        icon: "star4",
+        description: "Reach 10,000 points",
+        icon: "star5",
         progress: 0,
-        maxProgress: 5000,
+        maxProgress: 10000,
         unlocked: false,
         category: "goals",
       },
       {
         id: "9",
+        title: "Field Marshal",
+        description: "Reach 15,000 points",
+        icon: "crown1",
+        progress: 0,
+        maxProgress: 15000,
+        unlocked: false,
+        category: "goals",
+      },
+      {
+        id: "10",
+        title: "Commander",
+        description: "Reach 20,000 points",
+        icon: "crown2",
+        progress: 0,
+        maxProgress: 20000,
+        unlocked: false,
+        category: "goals",
+      },
+      {
+        id: "11",
+        title: "Supreme Commander",
+        description: "Reach 30,000 points - Ultimate Rank!",
+        icon: "crown3",
+        progress: 0,
+        maxProgress: 30000,
+        unlocked: false,
+        category: "goals",
+      },
+      {
+        id: "12",
         title: "Milestone Master",
         description: "Complete 10 milestones",
         icon: "checkCircle2",
@@ -167,7 +199,7 @@ export default function AchievementsPage() {
         category: "milestones",
       },
       {
-        id: "10",
+        id: "13",
         title: "Streak Champion",
         description: "Maintain a 7-day streak",
         icon: "flame",
@@ -185,8 +217,6 @@ export default function AchievementsPage() {
         return <Circle className="h-8 w-8 text-yellow-500" strokeWidth={3} />;
       case "chevron1":
         return <ChevronDown className="h-8 w-8 text-yellow-500" strokeWidth={3} />;
-      case "chevron2":
-        return <div className="flex flex-col -space-y-1"><ChevronDown className="h-4 w-4 text-yellow-500" strokeWidth={3} /><ChevronDown className="h-4 w-4 text-yellow-500" strokeWidth={3} /></div>;
       case "chevron3":
         return <div className="flex flex-col -space-y-1"><ChevronDown className="h-4 w-4 text-yellow-500" strokeWidth={3} /><ChevronDown className="h-4 w-4 text-yellow-500" strokeWidth={3} /><ChevronDown className="h-4 w-4 text-yellow-500" strokeWidth={3} /></div>;
       case "star1":
@@ -197,6 +227,14 @@ export default function AchievementsPage() {
         return <div className="flex"><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /></div>;
       case "star4":
         return <div className="flex"><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /></div>;
+      case "star5":
+        return <div className="flex"><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /><Star className="h-4 w-4 fill-yellow-500 text-yellow-500" /></div>;
+      case "crown1":
+        return <div className="flex items-center gap-0.5"><Crown className="h-6 w-6 fill-yellow-500 text-yellow-500" /><Gem className="h-3 w-3 fill-yellow-500 text-yellow-500" /></div>;
+      case "crown2":
+        return <div className="flex items-center gap-0.5"><Crown className="h-6 w-6 fill-yellow-500 text-yellow-500" /><Gem className="h-3 w-3 fill-yellow-500 text-yellow-500" /><Gem className="h-3 w-3 fill-yellow-500 text-yellow-500" /></div>;
+      case "crown3":
+        return <div className="flex items-center gap-0.5"><Crown className="h-6 w-6 fill-yellow-500 text-yellow-500" /><Gem className="h-3 w-3 fill-yellow-500 text-yellow-500" /><Gem className="h-3 w-3 fill-yellow-500 text-yellow-500" /><Gem className="h-3 w-3 fill-yellow-500 text-yellow-500" /></div>;
       case "flame":
         return <Flame className="h-8 w-8 text-orange-500" />;
       case "checkCircle2":
@@ -308,27 +346,27 @@ export default function AchievementsPage() {
                 {unlockedAchievements.map((achievement) => (
                   <div
                     key={achievement.id}
-                    className="flex items-start p-4 border rounded-lg bg-muted/30"
+                    className="flex items-start p-5 border-2 rounded-3xl bg-gradient-to-br from-green-50/50 to-emerald-50/30 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
                   >
-                    <div className="mr-4 bg-background p-2 rounded-full">
+                    <div className="mr-4 bg-white p-3 rounded-3xl shadow-sm border border-green-100">
                       {getIconComponent(achievement.icon)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{achievement.title}</h4>
+                        <h4 className="font-semibold text-base">{achievement.title}</h4>
                         <Badge
                           variant="outline"
-                          className="bg-green-500/10 text-green-600 border-green-200"
+                          className="bg-green-500/10 text-green-600 border-green-300 rounded-full px-2.5"
                         >
                           Unlocked
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {achievement.description}
                       </p>
                       {achievement.unlockedAt && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Unlocked on{" "}
+                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
                           {new Date(
                             achievement.unlockedAt,
                           ).toLocaleDateString()}
@@ -346,20 +384,20 @@ export default function AchievementsPage() {
                 {inProgressAchievements.map((achievement) => (
                   <div
                     key={achievement.id}
-                    className="flex items-start p-4 border rounded-lg"
+                    className="flex items-start p-5 border-2 rounded-3xl bg-gradient-to-br from-slate-50/50 to-gray-50/30 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-gray-300"
                   >
-                    <div className="mr-4 bg-muted p-2 rounded-full">
+                    <div className="mr-4 bg-white p-3 rounded-3xl shadow-sm border">
                       {getIconComponent(achievement.icon)}
                     </div>
                     <div className="w-full">
-                      <h4 className="font-medium">{achievement.title}</h4>
-                      <p className="text-sm text-muted-foreground">
+                      <h4 className="font-semibold text-base">{achievement.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
                         {achievement.description}
                       </p>
-                      <div className="mt-2 space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span>Progress</span>
-                          <span>
+                      <div className="mt-3 space-y-2">
+                        <div className="flex justify-between text-xs font-medium">
+                          <span className="text-muted-foreground">Progress</span>
+                          <span className="text-foreground">
                             {achievement.progress}/{achievement.maxProgress}
                           </span>
                         </div>
@@ -368,6 +406,7 @@ export default function AchievementsPage() {
                             (achievement.progress / achievement.maxProgress) *
                             100
                           }
+                          className="h-2"
                         />
                       </div>
                     </div>
@@ -381,31 +420,37 @@ export default function AchievementsPage() {
                 {goalAchievements.map((achievement) => (
                   <div
                     key={achievement.id}
-                    className="flex items-start p-4 border rounded-lg bg-muted/30"
+                    className={`flex items-start p-5 border-2 rounded-3xl transition-all duration-300 hover:scale-[1.02] ${
+                      achievement.unlocked
+                        ? "bg-gradient-to-br from-green-50/50 to-emerald-50/30 hover:shadow-lg"
+                        : "bg-gradient-to-br from-slate-50/50 to-gray-50/30 hover:shadow-lg hover:border-gray-300"
+                    }`}
                   >
-                    <div className="mr-4 bg-background p-2 rounded-full">
+                    <div className={`mr-4 p-3 rounded-3xl shadow-sm border ${
+                      achievement.unlocked ? "bg-white border-green-100" : "bg-white"
+                    }`}>
                       {getIconComponent(achievement.icon)}
                     </div>
                     <div className="w-full">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{achievement.title}</h4>
+                        <h4 className="font-semibold text-base">{achievement.title}</h4>
                         {achievement.unlocked && (
                           <Badge
                             variant="outline"
-                            className="bg-green-500/10 text-green-600 border-green-200"
+                            className="bg-green-500/10 text-green-600 border-green-300 rounded-full px-2.5"
                           >
                             Unlocked
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {achievement.description}
                       </p>
                       {!achievement.unlocked && (
-                        <div className="mt-2 space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span>Progress</span>
-                            <span>
+                        <div className="mt-3 space-y-2">
+                          <div className="flex justify-between text-xs font-medium">
+                            <span className="text-muted-foreground">Progress</span>
+                            <span className="text-foreground">
                               {achievement.progress}/{achievement.maxProgress}
                             </span>
                           </div>
@@ -414,6 +459,7 @@ export default function AchievementsPage() {
                               (achievement.progress / achievement.maxProgress) *
                               100
                             }
+                            className="h-2"
                           />
                         </div>
                       )}
@@ -428,31 +474,37 @@ export default function AchievementsPage() {
                 {milestoneAchievements.map((achievement) => (
                   <div
                     key={achievement.id}
-                    className="flex items-start p-4 border rounded-lg bg-muted/30"
+                    className={`flex items-start p-5 border-2 rounded-3xl transition-all duration-300 hover:scale-[1.02] ${
+                      achievement.unlocked
+                        ? "bg-gradient-to-br from-green-50/50 to-emerald-50/30 hover:shadow-lg"
+                        : "bg-gradient-to-br from-slate-50/50 to-gray-50/30 hover:shadow-lg hover:border-gray-300"
+                    }`}
                   >
-                    <div className="mr-4 bg-background p-2 rounded-full">
+                    <div className={`mr-4 p-3 rounded-3xl shadow-sm border ${
+                      achievement.unlocked ? "bg-white border-green-100" : "bg-white"
+                    }`}>
                       {getIconComponent(achievement.icon)}
                     </div>
                     <div className="w-full">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{achievement.title}</h4>
+                        <h4 className="font-semibold text-base">{achievement.title}</h4>
                         {achievement.unlocked && (
                           <Badge
                             variant="outline"
-                            className="bg-green-500/10 text-green-600 border-green-200"
+                            className="bg-green-500/10 text-green-600 border-green-300 rounded-full px-2.5"
                           >
                             Unlocked
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {achievement.description}
                       </p>
                       {!achievement.unlocked && (
-                        <div className="mt-2 space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span>Progress</span>
-                            <span>
+                        <div className="mt-3 space-y-2">
+                          <div className="flex justify-between text-xs font-medium">
+                            <span className="text-muted-foreground">Progress</span>
+                            <span className="text-foreground">
                               {achievement.progress}/{achievement.maxProgress}
                             </span>
                           </div>
@@ -461,6 +513,7 @@ export default function AchievementsPage() {
                               (achievement.progress / achievement.maxProgress) *
                               100
                             }
+                            className="h-2"
                           />
                         </div>
                       )}
@@ -475,31 +528,37 @@ export default function AchievementsPage() {
                 {streakAchievements.map((achievement) => (
                   <div
                     key={achievement.id}
-                    className="flex items-start p-4 border rounded-lg bg-muted/30"
+                    className={`flex items-start p-5 border-2 rounded-3xl transition-all duration-300 hover:scale-[1.02] ${
+                      achievement.unlocked
+                        ? "bg-gradient-to-br from-green-50/50 to-emerald-50/30 hover:shadow-lg"
+                        : "bg-gradient-to-br from-slate-50/50 to-gray-50/30 hover:shadow-lg hover:border-gray-300"
+                    }`}
                   >
-                    <div className="mr-4 bg-background p-2 rounded-full">
+                    <div className={`mr-4 p-3 rounded-3xl shadow-sm border ${
+                      achievement.unlocked ? "bg-white border-green-100" : "bg-white"
+                    }`}>
                       {getIconComponent(achievement.icon)}
                     </div>
                     <div className="w-full">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{achievement.title}</h4>
+                        <h4 className="font-semibold text-base">{achievement.title}</h4>
                         {achievement.unlocked && (
                           <Badge
                             variant="outline"
-                            className="bg-green-500/10 text-green-600 border-green-200"
+                            className="bg-green-500/10 text-green-600 border-green-300 rounded-full px-2.5"
                           >
                             Unlocked
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {achievement.description}
                       </p>
                       {!achievement.unlocked && (
-                        <div className="mt-2 space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span>Progress</span>
-                            <span>
+                        <div className="mt-3 space-y-2">
+                          <div className="flex justify-between text-xs font-medium">
+                            <span className="text-muted-foreground">Progress</span>
+                            <span className="text-foreground">
                               {achievement.progress}/{achievement.maxProgress}
                             </span>
                           </div>
@@ -508,6 +567,7 @@ export default function AchievementsPage() {
                               (achievement.progress / achievement.maxProgress) *
                               100
                             }
+                            className="h-2"
                           />
                         </div>
                       )}

@@ -107,7 +107,7 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                     Cancelling...
                   </>
                 ) : (

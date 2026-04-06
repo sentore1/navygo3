@@ -145,8 +145,7 @@ export default function EnvironmentCheck() {
           <CardContent>
             {loading ? (
               <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2">Checking environment...</span>
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
               </div>
             ) : error ? (
               <Alert variant="destructive">
@@ -256,7 +255,7 @@ export default function EnvironmentCheck() {
           <CardContent>
             {loading ? (
               <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
               </div>
             ) : error ? (
               <Alert variant="destructive">
@@ -310,7 +309,7 @@ export default function EnvironmentCheck() {
         <CardContent>
           {loading ? (
             <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
             </div>
           ) : error ? (
             <Alert variant="destructive">
@@ -405,10 +404,7 @@ export default function EnvironmentCheck() {
             className="w-full"
           >
             {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Checking...
-              </>
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               "Recheck Environment"
             )}

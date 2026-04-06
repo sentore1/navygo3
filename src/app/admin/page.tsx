@@ -175,17 +175,26 @@ export default function AdminDashboard() {
       .select("amount, currency")
       .eq("status", "completed");
 
-    // If revenue_transactions doesn't exist yet, fall back to kpay_transactions
+    // Calculate total revenue with proper currency handling
     let totalRevenue = 0;
     if (revenueData && revenueData.length > 0) {
-      totalRevenue = revenueData.reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
+      // Convert all currencies to USD for display
+      // RWF to USD conversion rate (approximate: 1 USD = 1300 RWF)
+      totalRevenue = revenueData.reduce((sum: number, t: any) => {
+        const amount = t.amount || 0;
+        if (t.currency === 'RWF') {
+          return sum + (amount / 1300); // Convert RWF to USD
+        }
+        return sum + amount; // Already in USD or other currency
+      }, 0);
     } else {
-      // Fallback to kpay_transactions
+      // Fallback to kpay_transactions (these are in RWF)
       const { data: transactions } = await supabase
         .from("kpay_transactions")
         .select("amount")
         .eq("status", "completed");
-      totalRevenue = transactions?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+      const rwfTotal = transactions?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+      totalRevenue = rwfTotal / 1300; // Convert RWF to USD
     }
 
     // Get new users this month
@@ -285,7 +294,7 @@ export default function AdminDashboard() {
       // Get revenue by month (last 6 months) from unified revenue table
       const { data: revenueTransactions } = await supabase
         .from("revenue_transactions")
-        .select("amount, transaction_date")
+        .select("amount, currency, transaction_date")
         .eq("status", "completed")
         .gte("transaction_date", new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString());
 
@@ -294,10 +303,12 @@ export default function AdminDashboard() {
       if (revenueTransactions && revenueTransactions.length > 0) {
         revenueTransactions.forEach((t: any) => {
           const month = new Date(t.transaction_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-          revenueByMonth[month] = (revenueByMonth[month] || 0) + (t.amount || 0);
+          // Convert RWF to USD for consistent display
+          const amountInUSD = t.currency === 'RWF' ? (t.amount || 0) / 1300 : (t.amount || 0);
+          revenueByMonth[month] = (revenueByMonth[month] || 0) + amountInUSD;
         });
       } else {
-        // Fallback to kpay_transactions if revenue_transactions doesn't exist
+        // Fallback to kpay_transactions if revenue_transactions doesn't exist (these are in RWF)
         const { data: transactions } = await supabase
           .from("kpay_transactions")
           .select("amount, created_at")
@@ -306,7 +317,9 @@ export default function AdminDashboard() {
 
         transactions?.forEach((t: any) => {
           const month = new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-          revenueByMonth[month] = (revenueByMonth[month] || 0) + (t.amount || 0);
+          // Convert RWF to USD
+          const amountInUSD = (t.amount || 0) / 1300;
+          revenueByMonth[month] = (revenueByMonth[month] || 0) + amountInUSD;
         });
       }
 
@@ -552,6 +565,13 @@ export default function AdminDashboard() {
           >
             <Globe className="h-4 w-4 mr-2" /> SEO
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/admin/pricing")}
+          >
+            <DollarSign className="h-4 w-4 mr-2" /> Pricing
+          </Button>
         </div>
       </div>
 
@@ -588,9 +608,11 @@ export default function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">
+              ${stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
             <p className="text-xs text-muted-foreground">
-              ${stats.avgRevenuePerUser.toFixed(2)} per user
+              ${stats.avgRevenuePerUser.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per user
             </p>
           </CardContent>
         </Card>

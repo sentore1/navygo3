@@ -44,8 +44,8 @@ export const HeroHeader = () => {
                                 href="/"
                                 aria-label="home"
                                 className="flex items-center space-x-2">
-                                <Target className="w-6 h-6 sm:w-8 sm:h-8 text-gray-610" />
-                                <span className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-610" style={{fontFamily: 'Lato, sans-serif'}}>NavyGoal</span>
+                                <Target className="w-5 h-5 sm:w-6 sm:h-6 text-gray-610" />
+                                <span className="text-base sm:text-lg lg:text-xl font-semibold text-gray-610" style={{fontFamily: 'Montserrat, sans-serif'}}>NavyGoal</span>
                             </Link>
 
                             <button

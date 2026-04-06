@@ -143,8 +143,8 @@ export default function VisitorsPage() {
 
       // Calculate overall stats
       if (visitorsData) {
-        const uniqueSessions = new Set(visitorsData.map(v => v.session_id)).size;
-        const avgTime = visitorsData.reduce((sum, v) => sum + (v.time_on_page || 0), 0) / visitorsData.length;
+        const uniqueSessions = new Set(visitorsData.map((v: Visitor) => v.session_id)).size;
+        const avgTime = visitorsData.reduce((sum: number, v: Visitor) => sum + (v.time_on_page || 0), 0) / visitorsData.length;
         const topCountry = countryData?.[0]?.country || "N/A";
 
         setStats({
@@ -176,17 +176,15 @@ export default function VisitorsPage() {
 
   const getCountryFlag = (countryCode: string) => {
     if (!countryCode) return "🌍";
-    return String.fromCodePoint(...[...countryCode.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
+    const codePoints = countryCode.toUpperCase().split('').map(c => 127397 + c.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
   };
 
   if (loading) {
     return (
       <div className="container mx-auto py-10">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading visitor analytics...</p>
-          </div>
+          <div className="h-4 w-4 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       </div>
     );

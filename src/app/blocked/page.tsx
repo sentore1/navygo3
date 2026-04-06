@@ -59,10 +59,7 @@ export default function BlockedPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+        <div className="h-4 w-4 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

@@ -1,71 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '../../../../supabase/server';
 import { sendEmailNotification } from '@/lib/notifications/email-gmail';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient();
-    
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const { type, userId, data } = body;
 
-    // Get user preferences
-    const { data: userProfile } = await supabase
+    // Validate input
+    if (!type || !userId) {
+      return NextResponse.json(
+        { error: 'Missing required fields: type, userId' },
+        { status: 400 }
+      );
+    }
+
+    // Get user details from Supabase
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    );
+
+    const { data: user, error: userError } = await supabase
       .from('users')
-      .select('email, name, notifications')
+      .select('email, name, display_name')
       .eq('id', userId)
       .single();
 
-    if (!userProfile) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
     }
 
-    // Check if user has email notifications enabled
-    const notifications = userProfile.notifications || {};
-    
-    let shouldSend = false;
-    switch (type) {
-      case 'goal_reminder':
-        shouldSend = notifications.goalReminders !== false;
-        break;
-      case 'achievement_unlocked':
-        shouldSend = notifications.achievements !== false;
-        break;
-      case 'account_update':
-      case 'subscription_update':
-        shouldSend = notifications.email !== false;
-        break;
-    }
-
-    if (!shouldSend) {
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Notification disabled by user preferences' 
-      });
-    }
+    // Prepare email data
+    const userName = user.display_name || user.name || 'Operative';
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://navygoal.com'}/dashboard`;
 
     // Send email notification
     const result = await sendEmailNotification({
-      to: userProfile.email,
-      type,
+      to: user.email,
+      type: type,
       data: {
-        userName: userProfile.name || 'there',
-        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+        userName,
+        dashboardUrl,
         ...data,
       },
     });
 
-    return NextResponse.json(result);
+    if (!result.success) {
+      console.error('Failed to send email:', result.error);
+      return NextResponse.json(
+        { error: 'Failed to send email notification' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Notification sent successfully',
+      messageId: result.data?.messageId,
+    });
   } catch (error: any) {
     console.error('Notification API error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to send notification' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }

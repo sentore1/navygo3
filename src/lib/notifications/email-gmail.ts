@@ -35,135 +35,184 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
 
     switch (type) {
       case 'goal_reminder':
-        subject = '⏰ Your Goals Are Waiting For You';
+        subject = 'MISSION BRIEFING: Your Daily Objectives Await';
         html = `
           <!DOCTYPE html>
           <html>
           <head>
             <style>
               body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-family: 'Courier New', monospace;
                 line-height: 1.6; 
                 color: #1a1a1a;
                 margin: 0;
                 padding: 0;
-                background: #f5f5f5;
+                background: #0a0e27;
               }
               .container { 
                 max-width: 600px; 
                 margin: 40px auto; 
-                background: white;
-                border-radius: 16px;
+                background: #ffffff;
+                border-radius: 4px;
                 overflow: hidden;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+                border: 3px solid #1e3a8a;
               }
               .header { 
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                color: white; 
-                padding: 40px 30px; 
+                background: #1e3a8a; 
+                color: #ffffff; 
+                padding: 30px; 
                 text-align: center;
+                border-bottom: 4px solid #1e3a8a;
               }
               .header h1 {
                 margin: 0;
-                font-size: 28px;
+                font-size: 24px;
                 font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+              }
+              .rank-badge {
+                display: inline-block;
+                background: #fbbf24;
+                color: #0f172a;
+                padding: 4px 12px;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-top: 8px;
+                border-radius: 2px;
               }
               .content { 
-                padding: 40px 30px;
+                padding: 30px;
                 background: white;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
               }
               .content p {
                 margin: 0 0 16px 0;
                 font-size: 16px;
-                color: #4a5568;
+                color: #374151;
               }
-              .stats {
-                background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+              .salutation {
+                font-weight: 700;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                font-size: 14px;
+                letter-spacing: 1px;
+              }
+              .mission-box {
+                background: #f0f4ff;
                 padding: 24px;
-                border-radius: 12px;
+                border-radius: 4px;
                 margin: 24px 0;
+                border-left: 6px solid #1e3a8a;
                 text-align: center;
               }
-              .stats-number {
-                font-size: 48px;
-                font-weight: 800;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
+              .mission-number {
+                font-size: 56px;
+                font-weight: 900;
+                color: #1e3a8a;
                 margin: 0;
+                line-height: 1;
               }
-              .stats-label {
-                font-size: 14px;
-                color: #718096;
+              .mission-label {
+                font-size: 13px;
+                color: #1e40af;
                 margin-top: 8px;
                 text-transform: uppercase;
-                letter-spacing: 1px;
+                letter-spacing: 2px;
+                font-weight: 700;
               }
               .button { 
                 display: inline-block;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: #1e3a8a;
                 color: white;
-                padding: 16px 32px;
+                padding: 16px 40px;
                 text-decoration: none;
-                border-radius: 8px;
-                font-weight: 600;
-                margin-top: 24px;
-                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-                transition: transform 0.2s;
-              }
-              .button:hover {
-                transform: translateY(-2px);
-              }
-              .motivational-quote {
-                border-left: 4px solid #667eea;
-                padding: 16px 20px;
-                margin: 24px 0;
-                background: #f7fafc;
                 border-radius: 4px;
-                font-style: italic;
-                color: #2d3748;
+                font-weight: 700;
+                margin-top: 24px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-size: 14px;
+                border: 2px solid #1e3a8a;
+                box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
+              }
+              .orders {
+                background: #f9fafb;
+                border: 2px solid #e5e7eb;
+                padding: 20px;
+                margin: 24px 0;
+                border-radius: 4px;
+              }
+              .orders-title {
+                font-weight: 700;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                font-size: 12px;
+                letter-spacing: 1px;
+                margin-bottom: 12px;
+              }
+              .orders-text {
+                color: #4b5563;
+                font-size: 15px;
+                line-height: 1.7;
+                margin: 0;
               }
               .footer { 
                 text-align: center; 
-                padding: 30px;
-                background: #f7fafc;
-                color: #718096;
-                font-size: 13px;
+                padding: 24px;
+                background: #f3f4f6;
+                color: #6b7280;
+                font-size: 12px;
+                border-top: 2px solid #e5e7eb;
               }
               .footer a {
-                color: #667eea;
+                color: #1e3a8a;
                 text-decoration: none;
+                font-weight: 600;
               }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <h1>⏰ Time to Shine!</h1>
+                <h1>DAILY MISSION BRIEFING</h1>
+                <div class="rank-badge">NAVYGOAL OPERATIVE</div>
               </div>
               <div class="content">
-                <p>Hey ${data.userName},</p>
-                <p>Your goals are calling! You've got momentum—let's keep it going.</p>
+                <p class="salutation">Operative ${data.userName},</p>
+                <p>Your command center has identified <strong>${data.pendingGoals}</strong> active mission(s) requiring your attention. You've got this - let's make today count.</p>
                 
-                <div class="stats">
-                  <div class="stats-number">${data.pendingGoals}</div>
-                  <div class="stats-label">Goals Waiting For You</div>
+                <div class="mission-box">
+                  <div class="mission-number">${data.pendingGoals}</div>
+                  <div class="mission-label">Active Missions</div>
                 </div>
 
-                <div class="motivational-quote">
-                  "The secret of getting ahead is getting started." — Mark Twain
+                ${data.goals && data.goals.length > 0 ? `
+                <div class="orders">
+                  <div class="orders-title">YOUR ACTIVE MISSIONS</div>
+                  <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 15px; line-height: 1.8;">
+                    ${data.goals.map(goal => `<li><strong>${goal.title}</strong>${goal.category ? ` <span style="color: #9ca3af;">(${goal.category})</span>` : ''}</li>`).join('')}
+                  </ul>
+                </div>
+                ` : ''}
+
+                <div class="orders">
+                  <div class="orders-title">STANDING ORDERS</div>
+                  <p class="orders-text">"Victory belongs to those who believe in it the most and believe in it the longest. We are going to win." — Admiral William F. Halsey Jr.</p>
                 </div>
 
-                <p>Every small step counts. Take just 5 minutes today to make progress on one goal.</p>
+                <p><strong>Mission Protocol:</strong> Every objective you complete brings you closer to your goals. Small steps lead to big victories. Stay focused and keep moving forward.</p>
                 
                 <center>
-                  <a href="${data.dashboardUrl}" class="button">Let's Do This! 🚀</a>
+                  <a href="${data.dashboardUrl}" class="button">VIEW YOUR MISSIONS</a>
                 </center>
               </div>
               <div class="footer">
-                <p>You're receiving this because you enabled goal reminders.</p>
-                <p><a href="${data.dashboardUrl}/settings">Update preferences</a></p>
+                <p><strong>CLASSIFIED:</strong> Mission briefings enabled by your preferences.</p>
+                <p><a href="${data.dashboardUrl}/settings">Modify notification settings</a></p>
               </div>
             </div>
           </body>
@@ -172,113 +221,148 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
         break;
 
       case 'achievement_unlocked':
-        subject = '🎉 You Did It! Achievement Unlocked';
+        subject = 'COMMENDATION: Medal Awarded for Outstanding Performance';
         html = `
           <!DOCTYPE html>
           <html>
           <head>
             <style>
               body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-family: 'Courier New', monospace;
                 line-height: 1.6; 
                 color: #1a1a1a;
                 margin: 0;
                 padding: 0;
-                background: #f5f5f5;
+                background: #0a0e27;
               }
               .container { 
                 max-width: 600px; 
                 margin: 40px auto; 
                 background: white;
-                border-radius: 16px;
+                border-radius: 4px;
                 overflow: hidden;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+                border: 3px solid #1e3a8a;
               }
               .header { 
-                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+                background: #1e3a8a; 
                 color: white; 
-                padding: 50px 30px; 
+                padding: 40px 30px; 
                 text-align: center;
+                border-bottom: 4px solid #1e3a8a;
               }
               .header h1 {
                 margin: 0;
-                font-size: 32px;
-                font-weight: 700;
+                font-size: 26px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 2px;
               }
-              .trophy {
-                font-size: 80px;
-                margin: 20px 0;
-                animation: bounce 1s infinite;
-              }
-              @keyframes bounce {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-10px); }
+              .medal-icon {
+                font-size: 64px;
+                margin: 16px 0;
               }
               .content { 
                 padding: 40px 30px;
                 background: white;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
               }
-              .achievement { 
-                background: linear-gradient(135deg, #fff5f7 0%, #ffe8ec 100%);
+              .salutation {
+                font-weight: 700;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                font-size: 14px;
+                letter-spacing: 1px;
+              }
+              .commendation { 
+                background: #f0f4ff;
                 padding: 30px;
-                border-radius: 12px;
+                border-radius: 4px;
                 margin: 24px 0;
-                border: 2px solid #f5576c;
+                border: 3px solid #1e3a8a;
                 text-align: center;
               }
-              .achievement h2 {
+              .commendation h2 {
                 margin: 0 0 12px 0;
-                font-size: 24px;
-                color: #f5576c;
+                font-size: 22px;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-weight: 900;
               }
-              .achievement p {
+              .commendation p {
                 margin: 0;
-                font-size: 16px;
-                color: #4a5568;
+                font-size: 15px;
+                color: #374151;
+                line-height: 1.6;
+              }
+              .citation {
+                background: #f9fafb;
+                border-left: 6px solid #1e3a8a;
+                padding: 20px;
+                margin: 24px 0;
+                border-radius: 4px;
+              }
+              .citation-title {
+                font-weight: 700;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                font-size: 12px;
+                letter-spacing: 1px;
+                margin-bottom: 12px;
               }
               .button { 
                 display: inline-block;
-                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                background: #1e3a8a;
                 color: white;
-                padding: 16px 32px;
+                padding: 16px 40px;
                 text-decoration: none;
-                border-radius: 8px;
-                font-weight: 600;
+                border-radius: 4px;
+                font-weight: 900;
                 margin-top: 24px;
-                box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-size: 14px;
+                border: 2px solid #1e3a8a;
+                box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
               }
               .footer { 
                 text-align: center; 
-                padding: 30px;
-                background: #f7fafc;
-                color: #718096;
-                font-size: 13px;
+                padding: 24px;
+                background: #f3f4f6;
+                color: #6b7280;
+                font-size: 12px;
+                border-top: 2px solid #e5e7eb;
               }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <div class="trophy">🏆</div>
-                <h1>Congratulations!</h1>
+                <h1>MEDAL OF ACHIEVEMENT</h1>
               </div>
               <div class="content">
-                <p>Hey ${data.userName},</p>
-                <p>You're absolutely crushing it! 🎉</p>
+                <p class="salutation">Operative ${data.userName},</p>
+                <p>High Command has reviewed your recent performance and is pleased to recognize your exceptional dedication to the mission.</p>
                 
-                <div class="achievement">
+                <div class="commendation">
                   <h2>${data.achievementName}</h2>
                   <p>${data.achievementDescription}</p>
                 </div>
 
-                <p>This is what dedication looks like. Keep pushing forward—you're inspiring!</p>
+                <div class="citation">
+                  <div class="citation-title">OFFICIAL CITATION</div>
+                  <p style="color: #4b5563; margin: 0; font-size: 15px;">This operative has demonstrated unwavering commitment and the discipline required of elite NavyGoal personnel. Your dedication inspires the entire fleet. Keep up the outstanding work.</p>
+                </div>
+
+                <p><strong>Status Update:</strong> Your achievements have been recorded. Continue pushing forward with the same determination.</p>
                 
                 <center>
-                  <a href="${data.dashboardUrl}" class="button">View My Achievements 🌟</a>
+                  <a href="${data.dashboardUrl}" class="button">VIEW YOUR ACHIEVEMENTS</a>
                 </center>
               </div>
               <div class="footer">
-                <p>You're receiving this because you enabled achievement notifications.</p>
+                <p><strong>NAVYGOAL COMMAND</strong> • Excellence Through Discipline</p>
               </div>
             </div>
           </body>
@@ -287,7 +371,7 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
         break;
 
       case 'account_update':
-        subject = '✅ Account Updated';
+        subject = 'SECURITY ALERT: Account Credentials Modified';
         html = `
           <!DOCTYPE html>
           <html>
@@ -304,13 +388,13 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
           <body>
             <div class="container">
               <div class="header">
-                <h1>✅ Account Update</h1>
+                <h1>Account Update</h1>
               </div>
               <div class="content">
                 <p>Hi ${data.userName},</p>
                 <p>Your account settings have been updated successfully.</p>
                 <div class="warning">
-                  <strong>⚠️ Security Notice:</strong> If you didn't make this change, please contact support immediately.
+                  <strong>Security Notice:</strong> If you didn't make this change, please contact support immediately.
                 </div>
               </div>
               <div class="footer">
@@ -323,7 +407,7 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
         break;
 
       case 'subscription_update':
-        subject = '💳 Subscription Update';
+        subject = 'COMMAND NOTICE: Subscription Status Update';
         html = `
           <!DOCTYPE html>
           <html>
@@ -377,7 +461,7 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
           <body>
             <div class="container">
               <div class="header">
-                <h1>💳 Subscription Update</h1>
+                <h1>Subscription Update</h1>
               </div>
               <div class="content">
                 <p>Hi ${data.userName},</p>
@@ -396,119 +480,164 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
         break;
 
       case 'streak_broken':
-        subject = '💔 Your Streak Needs You!';
+        subject = 'URGENT: Mission Continuity at Risk - Immediate Action Required';
         html = `
           <!DOCTYPE html>
           <html>
           <head>
             <style>
               body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-family: 'Courier New', monospace;
                 line-height: 1.6; 
                 color: #1a1a1a;
                 margin: 0;
                 padding: 0;
-                background: #f5f5f5;
+                background: #0a0e27;
               }
               .container { 
                 max-width: 600px; 
                 margin: 40px auto; 
                 background: white;
-                border-radius: 16px;
+                border-radius: 4px;
                 overflow: hidden;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+                border: 3px solid #1e3a8a;
               }
               .header { 
-                background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); 
+                background: #1e3a8a; 
                 color: white; 
                 padding: 40px 30px; 
                 text-align: center;
+                border-bottom: 4px solid #1e3a8a;
               }
               .header h1 {
                 margin: 0;
-                font-size: 28px;
+                font-size: 24px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+              }
+              .rank-badge {
+                display: inline-block;
+                background: #ffffff;
+                color: #1e3a8a;
+                padding: 4px 12px;
+                font-size: 11px;
                 font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-top: 8px;
+                border-radius: 2px;
               }
               .content { 
                 padding: 40px 30px;
                 background: white;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
               }
-              .streak-info {
-                background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
-                padding: 24px;
-                border-radius: 12px;
-                margin: 24px 0;
-                text-align: center;
-                border: 2px solid #ff6b6b;
-              }
-              .streak-number {
-                font-size: 48px;
-                font-weight: 800;
-                color: #ff6b6b;
-                margin: 0;
-              }
-              .streak-label {
-                font-size: 14px;
-                color: #718096;
-                margin-top: 8px;
+              .salutation {
+                font-weight: 700;
+                color: #1e3a8a;
                 text-transform: uppercase;
+                font-size: 14px;
                 letter-spacing: 1px;
               }
-              .motivational-quote {
-                border-left: 4px solid #ff6b6b;
-                padding: 16px 20px;
-                margin: 24px 0;
-                background: #f7fafc;
+              .mission-box {
+                background: #f0f4ff;
+                padding: 24px;
                 border-radius: 4px;
-                font-style: italic;
-                color: #2d3748;
+                margin: 24px 0;
+                border-left: 6px solid #1e3a8a;
+                text-align: center;
+              }
+              .mission-number {
+                font-size: 56px;
+                font-weight: 900;
+                color: #1e3a8a;
+                margin: 0;
+                line-height: 1;
+              }
+              .mission-label {
+                font-size: 13px;
+                color: #1e40af;
+                margin-top: 8px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                font-weight: 700;
+              }
+              .orders {
+                background: #f9fafb;
+                border: 2px solid #e5e7eb;
+                padding: 20px;
+                margin: 24px 0;
+                border-radius: 4px;
+              }
+              .orders-title {
+                font-weight: 700;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                font-size: 12px;
+                letter-spacing: 1px;
+                margin-bottom: 12px;
+              }
+              .orders-text {
+                color: #4b5563;
+                font-size: 15px;
+                line-height: 1.7;
+                margin: 0;
               }
               .button { 
                 display: inline-block;
-                background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+                background: #1e3a8a;
                 color: white;
-                padding: 16px 32px;
+                padding: 16px 40px;
                 text-decoration: none;
-                border-radius: 8px;
-                font-weight: 600;
+                border-radius: 4px;
+                font-weight: 900;
                 margin-top: 24px;
-                box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-size: 14px;
+                border: 2px solid #1e3a8a;
+                box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
               }
               .footer { 
                 text-align: center; 
-                padding: 30px;
-                background: #f7fafc;
-                color: #718096;
-                font-size: 13px;
+                padding: 24px;
+                background: #f3f4f6;
+                color: #6b7280;
+                font-size: 12px;
+                border-top: 2px solid #e5e7eb;
               }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <h1>💔 Don't Break The Chain!</h1>
+                <h1>MISSION CONTINUITY ALERT</h1>
+                <div class="rank-badge">URGENT ACTION REQUIRED</div>
               </div>
               <div class="content">
-                <p>Hey ${data.userName},</p>
-                <p>We noticed you haven't logged progress in a while. Your ${data.streakDays}-day streak is at risk!</p>
+                <p class="salutation">Operative ${data.userName},</p>
+                <p><strong>SITUATION REPORT:</strong> We've noticed a gap in your activity. Your ${data.streakDays}-day streak is at risk. Don't let your momentum slip away - you've come too far!</p>
                 
-                <div class="streak-info">
-                  <div class="streak-number">${data.streakDays}</div>
-                  <div class="streak-label">Day Streak at Risk</div>
+                <div class="mission-box">
+                  <div class="mission-number">${data.streakDays}</div>
+                  <div class="mission-label">Days of Continuous Deployment</div>
                 </div>
 
-                <div class="motivational-quote">
-                  "Success is the sum of small efforts repeated day in and day out." — Robert Collier
+                <div class="orders">
+                  <div class="orders-title">COMMAND DIRECTIVE</div>
+                  <p class="orders-text">"Success is the sum of small efforts repeated day in and day out. Your mission is waiting. Your progress matters. Get back on track today."</p>
                 </div>
 
-                <p>You've come so far—don't let it slip away! Just 5 minutes today can save your streak and keep your momentum alive.</p>
+                <p><strong>Action Required:</strong> Log your progress within the next 24 hours to keep your streak alive. Every day counts toward your success.</p>
                 
                 <center>
-                  <a href="${data.dashboardUrl}" class="button">Save My Streak! 🔥</a>
+                  <a href="${data.dashboardUrl}" class="button">CONTINUE YOUR MISSION</a>
                 </center>
               </div>
               <div class="footer">
-                <p>You're receiving this because you enabled goal reminders.</p>
+                <p><strong>PRIORITY MESSAGE:</strong> Mission continuity alerts enabled.</p>
               </div>
             </div>
           </body>
@@ -517,42 +646,66 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
         break;
 
       case 'inactive_user':
-        subject = '👋 We Miss You! Your Goals Are Waiting';
+        subject = 'RECALL NOTICE: Your Fleet Needs You Back in Formation';
         html = `
           <!DOCTYPE html>
           <html>
           <head>
             <style>
               body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-family: 'Courier New', monospace;
                 line-height: 1.6; 
                 color: #1a1a1a;
                 margin: 0;
                 padding: 0;
-                background: #f5f5f5;
+                background: #0a0e27;
               }
               .container { 
                 max-width: 600px; 
                 margin: 40px auto; 
                 background: white;
-                border-radius: 16px;
+                border-radius: 4px;
                 overflow: hidden;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+                border: 3px solid #1e3a8a;
               }
               .header { 
-                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+                background: #1e3a8a; 
                 color: white; 
                 padding: 40px 30px; 
                 text-align: center;
+                border-bottom: 4px solid #1e3a8a;
               }
               .header h1 {
                 margin: 0;
-                font-size: 28px;
+                font-size: 24px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+              }
+              .rank-badge {
+                display: inline-block;
+                background: #ffffff;
+                color: #1e3a8a;
+                padding: 4px 12px;
+                font-size: 11px;
                 font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-top: 8px;
+                border-radius: 2px;
               }
               .content { 
                 padding: 40px 30px;
                 background: white;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              }
+              .salutation {
+                font-weight: 700;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                font-size: 14px;
+                letter-spacing: 1px;
               }
               .stats-grid {
                 display: grid;
@@ -561,73 +714,85 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
                 margin: 24px 0;
               }
               .stat-card {
-                background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+                background: #f0f4ff;
                 padding: 20px;
-                border-radius: 12px;
+                border-radius: 4px;
                 text-align: center;
+                border: 2px solid #1e3a8a;
               }
               .stat-number {
-                font-size: 32px;
-                font-weight: 800;
-                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
+                font-size: 36px;
+                font-weight: 900;
+                color: #0c4a6e;
                 margin: 0;
               }
               .stat-label {
-                font-size: 12px;
-                color: #718096;
+                font-size: 11px;
+                color: #075985;
                 margin-top: 8px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
+                font-weight: 700;
               }
-              .motivational-quote {
-                border-left: 4px solid #4facfe;
-                padding: 16px 20px;
+              .orders {
+                background: #f9fafb;
+                border-left: 6px solid #1e3a8a;
+                padding: 20px;
                 margin: 24px 0;
-                background: #f7fafc;
                 border-radius: 4px;
-                font-style: italic;
-                color: #2d3748;
+              }
+              .orders-title {
+                font-weight: 700;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                font-size: 12px;
+                letter-spacing: 1px;
+                margin-bottom: 12px;
               }
               .button { 
                 display: inline-block;
-                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                background: #1e3a8a;
                 color: white;
-                padding: 16px 32px;
+                padding: 16px 40px;
                 text-decoration: none;
-                border-radius: 8px;
-                font-weight: 600;
+                border-radius: 4px;
+                font-weight: 900;
                 margin-top: 24px;
-                box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-size: 14px;
+                border: 2px solid #1e3a8a;
+                box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
               }
               .footer { 
                 text-align: center; 
-                padding: 30px;
-                background: #f7fafc;
-                color: #718096;
-                font-size: 13px;
+                padding: 24px;
+                background: #f3f4f6;
+                color: #6b7280;
+                font-size: 12px;
+                border-top: 2px solid #e5e7eb;
               }
               .footer a {
-                color: #4facfe;
+                color: #0ea5e9;
                 text-decoration: none;
+                font-weight: 600;
               }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <h1>👋 Welcome Back!</h1>
+                <h1>RECALL TO ACTIVE DUTY</h1>
+                <div class="rank-badge">PERSONNEL NOTICE</div>
               </div>
               <div class="content">
-                <p>Hey ${data.userName},</p>
-                <p>It's been ${data.daysSinceLastLogin} days since we last saw you. We've been keeping your goals safe and sound!</p>
+                <p class="salutation">Operative ${data.userName},</p>
+                <p><strong>SITUATION REPORT:</strong> It's been ${data.daysSinceLastLogin} days since your last login. Your missions are waiting, and we're here to help you get back on track.</p>
                 
                 <div class="stats-grid">
                   <div class="stat-card">
                     <div class="stat-number">${data.totalGoals || 0}</div>
-                    <div class="stat-label">Your Goals</div>
+                    <div class="stat-label">Assigned Missions</div>
                   </div>
                   <div class="stat-card">
                     <div class="stat-number">${data.completedGoals || 0}</div>
@@ -635,18 +800,19 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
                   </div>
                 </div>
 
-                <div class="motivational-quote">
-                  "The best time to plant a tree was 20 years ago. The second best time is now." — Chinese Proverb
+                <div class="orders">
+                  <div class="orders-title">FLEET ADMIRAL'S MESSAGE</div>
+                  <p style="color: #4b5563; margin: 0; font-size: 15px; line-height: 1.7;">"The best time to start is now. Your goals are still achievable. Your progress still matters. Welcome back - we're glad to see you return."</p>
                 </div>
 
-                <p>Life gets busy—we get it. But your future self will thank you for taking action today. Even small progress is still progress!</p>
+                <p><strong>Orders:</strong> Jump back in and tackle one goal today. The fleet operates best when everyone is engaged. Your contribution makes a difference.</p>
                 
                 <center>
-                  <a href="${data.dashboardUrl}" class="button">Let's Get Back On Track! 💪</a>
+                  <a href="${data.dashboardUrl}" class="button">RETURN TO YOUR MISSIONS</a>
                 </center>
               </div>
               <div class="footer">
-                <p>Not interested anymore? <a href="${data.dashboardUrl}/settings">Update your preferences</a></p>
+                <p>Not ready to return? <a href="${data.dashboardUrl}/settings">Update your status</a></p>
               </div>
             </div>
           </body>
@@ -655,121 +821,164 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
         break;
 
       case 'comeback_motivation':
-        subject = '🌟 Ready For A Fresh Start?';
+        subject = 'REDEPLOYMENT ORDERS: Begin Your Next Campaign';
         html = `
           <!DOCTYPE html>
           <html>
           <head>
             <style>
               body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-family: 'Courier New', monospace;
                 line-height: 1.6; 
                 color: #1a1a1a;
                 margin: 0;
                 padding: 0;
-                background: #f5f5f5;
+                background: #0a0e27;
               }
               .container { 
                 max-width: 600px; 
                 margin: 40px auto; 
                 background: white;
-                border-radius: 16px;
+                border-radius: 4px;
                 overflow: hidden;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+                border: 3px solid #1e3a8a;
               }
               .header { 
-                background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); 
+                background: #1e3a8a; 
                 color: white; 
                 padding: 40px 30px; 
                 text-align: center;
+                border-bottom: 4px solid #1e3a8a;
               }
               .header h1 {
                 margin: 0;
-                font-size: 28px;
+                font-size: 24px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+              }
+              .rank-badge {
+                display: inline-block;
+                background: #ffffff;
+                color: #1e3a8a;
+                padding: 4px 12px;
+                font-size: 11px;
                 font-weight: 700;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-top: 8px;
+                border-radius: 2px;
               }
               .content { 
                 padding: 40px 30px;
                 background: white;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              }
+              .salutation {
+                font-weight: 700;
+                color: #15803d;
+                text-transform: uppercase;
+                font-size: 14px;
+                letter-spacing: 1px;
               }
               .highlight-box {
-                background: linear-gradient(135deg, #fff9e6 0%, #ffedd5 100%);
+                background: #f0f4ff;
                 padding: 24px;
-                border-radius: 12px;
+                border-radius: 4px;
                 margin: 24px 0;
-                border: 2px solid #fbbf24;
+                border: 2px solid #1e3a8a;
               }
               .highlight-box h3 {
                 margin: 0 0 12px 0;
-                color: #92400e;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                font-size: 13px;
+                letter-spacing: 1px;
+                font-weight: 900;
               }
-              .tips-list {
+              .highlight-box p {
+                margin: 0;
+                color: #374151;
+                font-size: 15px;
+                line-height: 1.7;
+              }
+              .tactics-list {
                 margin: 24px 0;
                 padding-left: 0;
                 list-style: none;
               }
-              .tips-list li {
+              .tactics-list li {
                 padding: 12px 0;
                 padding-left: 32px;
                 position: relative;
+                color: #374151;
+                font-size: 15px;
               }
-              .tips-list li:before {
-                content: "✨";
+              .tactics-list li:before {
+                content: "▸";
                 position: absolute;
                 left: 0;
+                color: #1e3a8a;
+                font-weight: 900;
+                font-size: 18px;
               }
               .button { 
                 display: inline-block;
-                background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+                background: #1e3a8a;
                 color: white;
-                padding: 16px 32px;
+                padding: 16px 40px;
                 text-decoration: none;
-                border-radius: 8px;
-                font-weight: 600;
+                border-radius: 4px;
+                font-weight: 900;
                 margin-top: 24px;
-                box-shadow: 0 4px 12px rgba(250, 112, 154, 0.4);
-                text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-size: 14px;
+                border: 2px solid #1e3a8a;
+                box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
               }
               .footer { 
                 text-align: center; 
-                padding: 30px;
-                background: #f7fafc;
-                color: #718096;
-                font-size: 13px;
+                padding: 24px;
+                background: #f3f4f6;
+                color: #6b7280;
+                font-size: 12px;
+                border-top: 2px solid #e5e7eb;
               }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <h1>🌟 Your Comeback Starts Now</h1>
+                <h1>NEW CAMPAIGN ORDERS</h1>
+                <div class="rank-badge">REDEPLOYMENT AUTHORIZED</div>
               </div>
               <div class="content">
-                <p>Hey ${data.userName},</p>
-                <p>Every champion has a comeback story. This could be yours.</p>
+                <p class="salutation">Operative ${data.userName},</p>
+                <p><strong>MISSION BRIEFING:</strong> Every elite operative experiences pauses. What matters is having the courage to start again. You've got what it takes.</p>
                 
                 <div class="highlight-box">
-                  <h3>💡 Did You Know?</h3>
-                  <p>People who return after a break often achieve more than before. Why? Because they come back with renewed motivation and clarity.</p>
+                  <h3>STRATEGIC INTELLIGENCE</h3>
+                  <p>People who return after a break often achieve more than before. The pause gives you fresh perspective and renewed energy. This is your moment.</p>
                 </div>
 
-                <p><strong>Here's how to restart strong:</strong></p>
-                <ul class="tips-list">
-                  <li>Start with just ONE small goal</li>
-                  <li>Set aside 10 minutes today</li>
-                  <li>Celebrate every tiny win</li>
-                  <li>Don't aim for perfection—aim for progress</li>
+                <p><strong>Recommended Strategy:</strong></p>
+                <ul class="tactics-list">
+                  <li>Pick ONE goal to focus on today</li>
+                  <li>Spend just 10 minutes getting started</li>
+                  <li>Celebrate every small win</li>
+                  <li>Progress over perfection - always</li>
                 </ul>
 
-                <p>Your past progress is still there. Your potential is still there. All you need is to take that first step.</p>
+                <p><strong>Command Assessment:</strong> Your past progress shows you have what it takes. Your goals are still within reach. All you need is to take that first step today.</p>
                 
                 <center>
-                  <a href="${data.dashboardUrl}" class="button">Start My Comeback 🚀</a>
+                  <a href="${data.dashboardUrl}" class="button">BEGIN YOUR NEXT MISSION</a>
                 </center>
               </div>
               <div class="footer">
-                <p>We believe in you. Let's make it happen together.</p>
+                <p><strong>NAVYGOAL COMMAND</strong> • Discipline • Excellence • Victory</p>
               </div>
             </div>
           </body>

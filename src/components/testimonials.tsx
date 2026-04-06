@@ -67,8 +67,8 @@ const Testimonials = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const titleItem = data.find(item => item.content_key === "testimonials_title");
-        const descItem = data.find(item => item.content_key === "testimonials_description");
+        const titleItem = data.find((item: any) => item.content_key === "testimonials_title");
+        const descItem = data.find((item: any) => item.content_key === "testimonials_description");
         
         setContent({
           title: titleItem?.content_value || content.title,

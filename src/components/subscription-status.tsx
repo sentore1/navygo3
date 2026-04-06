@@ -19,22 +19,25 @@ export default function SubscriptionStatus() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Not authenticated");
 
-        const [stripeRes, userRes] = await Promise.all([
+        const [stripeRes, polarRes, kpayRes, userRes] = await Promise.all([
           supabase.from("subscriptions").select("*").eq("user_id", user.id).eq("status", "active").maybeSingle(),
+          supabase.from("polar_subscriptions").select("*").eq("user_id", user.id).eq("status", "active").maybeSingle(),
+          supabase.from("kpay_transactions").select("*").eq("user_id", user.id).eq("status", "completed").order("created_at", { ascending: false }).limit(1).maybeSingle(),
           supabase.from("users").select("has_trial_access, subscription_status, subscription_expires_at").eq("id", user.id).single()
         ]);
 
         const hasStripe = !!stripeRes.data;
-        const isKpayActive = userRes.data?.subscription_status === "active" && 
-          (!userRes.data?.subscription_expires_at || new Date(userRes.data.subscription_expires_at) > new Date());
+        const hasPolar = !!polarRes.data;
+        const hasKpay = !!kpayRes.data && userRes.data?.subscription_status === "active";
         const hasTrialAccess = userRes.data?.has_trial_access || false;
 
         let subscriptionDetails = null;
         if (hasStripe) subscriptionDetails = { provider: "stripe", details: stripeRes.data };
-        else if (isKpayActive) subscriptionDetails = { provider: "kpay", details: { current_period_end: userRes.data?.subscription_expires_at } };
+        else if (hasPolar) subscriptionDetails = { provider: "polar", details: polarRes.data };
+        else if (hasKpay) subscriptionDetails = { provider: "kpay", details: { current_period_end: userRes.data?.subscription_expires_at } };
 
         setSubscriptionData({
-          hasActiveSubscription: hasStripe || isKpayActive,
+          hasActiveSubscription: hasStripe || hasPolar || hasKpay,
           hasTrialAccess,
           subscriptionDetails
         });
@@ -68,7 +71,7 @@ export default function SubscriptionStatus() {
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-6">
-            <Loader2 className="h-6 w-6 animate-spin text-blue-600 mr-2" />
+            <Loader2 className="h-3 w-3 animate-spin text-blue-600 mr-2" />
             <span>Checking subscription status...</span>
           </div>
         ) : error ? (

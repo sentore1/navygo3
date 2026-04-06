@@ -80,6 +80,7 @@ function PolarSubscriptionButton({
         if (error)
           throw new Error(error.message || "Failed to create checkout");
         if (data?.url) {
+          // Show loading state while redirecting
           window.location.href = data.url;
           return;
         }
@@ -100,6 +101,7 @@ function PolarSubscriptionButton({
       // Redirect to Polar checkout
       if (checkoutUrl) {
         console.log("Redirecting to Polar checkout:", checkoutUrl);
+        // Show loading state while redirecting
         window.location.href = checkoutUrl;
       } else {
         throw new Error("Failed to create checkout session");

@@ -48,7 +48,7 @@ export default function FeaturesSection() {
 
             if (sectionsData) {
                 const sectionsWithItems = await Promise.all(
-                    sectionsData.map(async (section) => {
+                    sectionsData.map(async (section: any) => {
                         const { data: items } = await supabase
                             .from('features_items')
                             .select('*')

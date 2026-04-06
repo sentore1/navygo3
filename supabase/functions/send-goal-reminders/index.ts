@@ -32,13 +32,14 @@ serve(async (req) => {
     const results = [];
 
     for (const user of users || []) {
-      // Check if user has incomplete goals for today
+      // Check if user has incomplete goals
       const { data: goals, error: goalsError } = await supabaseClient
         .from('goals')
-        .select('id')
+        .select('id, title, category')
         .eq('user_id', user.id)
         .eq('completed', false)
-        .gte('created_at', new Date().toISOString().split('T')[0]);
+        .order('created_at', { ascending: false })
+        .limit(5); // Get top 5 most recent goals
 
       if (goalsError) {
         console.error(`Error fetching goals for user ${user.id}:`, goalsError);
@@ -60,6 +61,7 @@ serve(async (req) => {
               userId: user.id,
               data: {
                 pendingGoals: goals.length,
+                goals: goals.map(g => ({ title: g.title, category: g.category })),
               },
             }),
           }
