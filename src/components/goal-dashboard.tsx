@@ -339,7 +339,7 @@ export default function GoalDashboard() {
   const handleLogProgress = async (goalId: string) => {
     try {
       const session = await supabase.auth.getSession();
-      const response = await fetch('https://rilhdwxirwxqfgsqpiww.supabase.co/functions/v1/supabase-functions-log-progress', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/supabase-functions-log-progress`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
