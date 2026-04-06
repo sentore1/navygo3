@@ -284,7 +284,7 @@ export default function GoalDetail({
                 <p className="text-sm text-muted-foreground">No milestones defined</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-400 [&::-webkit-scrollbar-thumb]:min-h-[40px]">
                 {goal.milestones.map((milestone, index) => (
                   <div key={milestone.id} className="space-y-1">
                     <div className="flex items-start gap-2">

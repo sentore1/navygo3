@@ -44,6 +44,7 @@ export default function AIGoalCreator({
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   ); // Default to 30 days from now
   const [aiEnabled, setAiEnabled] = useState(true);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   useEffect(() => {
     checkAIStatus();
@@ -609,7 +610,7 @@ export default function AIGoalCreator({
                 <Label className="text-[10px] font-medium mb-1 block">
                   Target Completion Date
                 </Label>
-                <Popover>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen} modal={true}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -619,16 +620,23 @@ export default function AIGoalCreator({
                         !targetDate && "text-muted-foreground",
                       )}
                       disabled={loading}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <Calendar className="mr-1.5 h-3 w-3" />
                       {targetDate ? format(targetDate, "PPP") : "Select a date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent 
+                    className="w-auto p-0" 
+                    align="start"
+                  >
                     <CalendarComponent
                       mode="single"
                       selected={targetDate}
-                      onSelect={setTargetDate}
+                      onSelect={(date) => {
+                        setTargetDate(date);
+                        setCalendarOpen(false);
+                      }}
                       initialFocus
                       disabled={(date) => date < new Date()}
                     />

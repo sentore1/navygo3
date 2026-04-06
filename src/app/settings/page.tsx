@@ -318,7 +318,7 @@ export default function SettingsPage() {
                               const seed = Math.random().toString(36).substring(7);
                               const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
                               
-                              // Update local state first
+                              // Update local state first for immediate feedback
                               setFormData({
                                 ...formData,
                                 avatar_url: avatarUrl,
@@ -326,17 +326,42 @@ export default function SettingsPage() {
                               
                               // Save to database
                               if (user) {
-                                const { error } = await supabase
+                                // First check if user exists in users table
+                                const { data: existingUser, error: checkError } = await supabase
                                   .from("users")
-                                  .update({ 
-                                    avatar_url: avatarUrl, 
-                                    updated_at: new Date().toISOString() 
-                                  })
-                                  .eq("id", user.id);
+                                  .select("id")
+                                  .eq("id", user.id)
+                                  .single();
+
+                                let saveError = null;
+
+                                if (checkError && checkError.code === "PGRST116") {
+                                  // User doesn't exist, insert
+                                  const { error } = await supabase.from("users").insert({
+                                    id: user.id,
+                                    user_id: user.id,
+                                    email: user.email,
+                                    name: formData.name || user.email.split('@')[0],
+                                    avatar_url: avatarUrl,
+                                    token_identifier: user.email,
+                                    updated_at: new Date().toISOString(),
+                                  });
+                                  saveError = error;
+                                } else {
+                                  // User exists, update
+                                  const { error } = await supabase
+                                    .from("users")
+                                    .update({ 
+                                      avatar_url: avatarUrl, 
+                                      updated_at: new Date().toISOString() 
+                                    })
+                                    .eq("id", user.id);
+                                  saveError = error;
+                                }
                                 
-                                if (error) {
-                                  console.error("Error saving avatar:", error);
-                                  alert("Failed to save avatar. Please try again.");
+                                if (saveError) {
+                                  console.error("Error saving avatar:", saveError);
+                                  alert(`Failed to save avatar: ${saveError.message}\n\nPlease run FIX_AVATAR_SAVE_ISSUE.sql in Supabase SQL Editor.`);
                                 } else {
                                   // Update user state to reflect the change
                                   setUser({
@@ -346,6 +371,7 @@ export default function SettingsPage() {
                                       avatar_url: avatarUrl,
                                     }
                                   });
+                                  console.log("Avatar saved successfully!");
                                 }
                               }
                             } catch (error: any) {
@@ -383,22 +409,47 @@ export default function SettingsPage() {
                             type="button"
                             onClick={async () => {
                               try {
-                                // Update local state first
+                                // Update local state first for immediate feedback
                                 setFormData({ ...formData, avatar_url: avatarUrl });
                                 
                                 // Save to database
                                 if (user) {
-                                  const { error } = await supabase
+                                  // First check if user exists in users table
+                                  const { data: existingUser, error: checkError } = await supabase
                                     .from("users")
-                                    .update({ 
-                                      avatar_url: avatarUrl, 
-                                      updated_at: new Date().toISOString() 
-                                    })
-                                    .eq("id", user.id);
+                                    .select("id")
+                                    .eq("id", user.id)
+                                    .single();
+
+                                  let saveError = null;
+
+                                  if (checkError && checkError.code === "PGRST116") {
+                                    // User doesn't exist, insert
+                                    const { error } = await supabase.from("users").insert({
+                                      id: user.id,
+                                      user_id: user.id,
+                                      email: user.email,
+                                      name: formData.name || user.email.split('@')[0],
+                                      avatar_url: avatarUrl,
+                                      token_identifier: user.email,
+                                      updated_at: new Date().toISOString(),
+                                    });
+                                    saveError = error;
+                                  } else {
+                                    // User exists, update
+                                    const { error } = await supabase
+                                      .from("users")
+                                      .update({ 
+                                        avatar_url: avatarUrl, 
+                                        updated_at: new Date().toISOString() 
+                                      })
+                                      .eq("id", user.id);
+                                    saveError = error;
+                                  }
                                   
-                                  if (error) {
-                                    console.error("Error saving avatar:", error);
-                                    alert("Failed to save avatar. Please try again.");
+                                  if (saveError) {
+                                    console.error("Error saving avatar:", saveError);
+                                    alert(`Failed to save avatar: ${saveError.message}\n\nPlease run FIX_AVATAR_SAVE_ISSUE.sql in Supabase SQL Editor.`);
                                   } else {
                                     // Update user state to reflect the change
                                     setUser({
@@ -408,6 +459,7 @@ export default function SettingsPage() {
                                         avatar_url: avatarUrl,
                                       }
                                     });
+                                    console.log("Avatar saved successfully!");
                                   }
                                 }
                               } catch (error: any) {

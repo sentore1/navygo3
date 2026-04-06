@@ -13,6 +13,11 @@ export type NotificationType =
   | 'inactive_user'
   | 'comeback_motivation';
 
+interface Goal {
+  title: string;
+  category?: string;
+}
+
 interface EmailNotification {
   to: string;
   type: NotificationType;
@@ -194,7 +199,7 @@ export async function sendEmailNotification({ to, type, data }: EmailNotificatio
                 <div class="orders">
                   <div class="orders-title">YOUR ACTIVE MISSIONS</div>
                   <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 15px; line-height: 1.8;">
-                    ${data.goals.map(goal => `<li><strong>${goal.title}</strong>${goal.category ? ` <span style="color: #9ca3af;">(${goal.category})</span>` : ''}</li>`).join('')}
+                    ${data.goals.map((goal: Goal) => `<li><strong>${goal.title}</strong>${goal.category ? ` <span style="color: #9ca3af;">(${goal.category})</span>` : ''}</li>`).join('')}
                   </ul>
                 </div>
                 ` : ''}

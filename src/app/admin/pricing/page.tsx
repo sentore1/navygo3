@@ -89,7 +89,7 @@ export default function AdminPricingPage() {
 
             if (featuresData) {
                 const featuresByProduct: Record<string, ProductFeature[]> = {};
-                featuresData.forEach((feature) => {
+                featuresData.forEach((feature: ProductFeature) => {
                     if (!featuresByProduct[feature.polar_product_id]) {
                         featuresByProduct[feature.polar_product_id] = [];
                     }

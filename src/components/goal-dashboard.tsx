@@ -64,7 +64,7 @@ export default function GoalDashboard() {
   const [showRankUp, setShowRankUp] = useState(false);
   const [newRank, setNewRank] = useState<string>("");
   const [previousRank, setPreviousRank] = useState<string>("Recruit");
-  const [isPro, setIsPro] = useState(false);
+  const [isPro, setIsPro] = useState<boolean | null>(null); // null = loading, true/false = loaded
   const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [userRank, setUserRank] = useState({
@@ -147,64 +147,78 @@ export default function GoalDashboard() {
   };
 
   const checkProStatus = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsPro(false);
+        return;
+      }
 
-    const { data: userData } = await supabase
-      .from('users')
-      .select('subscription_status, role')
-      .eq('id', user.id)
-      .single();
+      // Use Promise.all to run queries in parallel instead of sequentially
+      const [userDataResult, polarSubResult, kpayTransactionResult] = await Promise.all([
+        supabase
+          .from('users')
+          .select('subscription_status, role')
+          .eq('id', user.id)
+          .single(),
+        supabase
+          .from('polar_subscriptions')
+          .select('product_id, status, has_ai_access')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle(),
+        supabase
+          .from('kpay_transactions')
+          .select('plan_name')
+          .eq('user_id', user.id)
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ]);
 
-    // Admins always have AI access
-    if (userData?.role === 'admin') {
-      setIsPro(true);
-      return;
-    }
+      const userData = userDataResult.data;
+      const polarSub = polarSubResult.data;
+      const transaction = kpayTransactionResult.data;
 
-    if (userData?.subscription_status === 'active') {
-      // Check Polar subscriptions first
-      const { data: polarSub } = await supabase
-        .from('polar_subscriptions')
-        .select('product_id, status, has_ai_access')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .maybeSingle();
-      
-      if (polarSub && polarSub.has_ai_access) {
-        // Polar subscription with AI access
+      // Admins always have AI access
+      if (userData?.role === 'admin') {
         setIsPro(true);
         return;
       }
 
-      // Check Kpay transactions (for Delta Goal and Pro plans)
-      const { data: transaction } = await supabase
-        .from('kpay_transactions')
-        .select('plan_name')
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (transaction?.plan_name === 'Pro' || transaction?.plan_name === 'Delta Goal') {
-        setIsPro(true);
-        return;
-      }
-
-      // If we have a Polar subscription but no AI access, still check if it's a Pro plan
-      if (polarSub) {
-        // Check if the product has AI access enabled in polar_product_features
-        const { data: productFeature } = await supabase
-          .from('polar_product_features')
-          .select('has_ai_access')
-          .eq('product_id', polarSub.product_id)
-          .single();
-        
-        if (productFeature?.has_ai_access) {
+      if (userData?.subscription_status === 'active') {
+        // Check Polar subscription with AI access
+        if (polarSub?.has_ai_access) {
           setIsPro(true);
+          return;
+        }
+
+        // Check Kpay transactions
+        if (transaction?.plan_name === 'Pro' || transaction?.plan_name === 'Delta Goal') {
+          setIsPro(true);
+          return;
+        }
+
+        // Check product features for Polar subscription
+        if (polarSub) {
+          const { data: productFeature } = await supabase
+            .from('polar_product_features')
+            .select('has_ai_access')
+            .eq('product_id', polarSub.product_id)
+            .maybeSingle();
+          
+          if (productFeature?.has_ai_access) {
+            setIsPro(true);
+            return;
+          }
         }
       }
+
+      setIsPro(false);
+    } catch (error) {
+      console.error('Error checking pro status:', error);
+      setIsPro(false);
     }
   };
 
@@ -427,7 +441,25 @@ export default function GoalDashboard() {
           >
             <Plus className="h-4 w-4" /> <span className="hidden sm:inline">New Goal</span>
           </Button>
-          {isPro ? (
+          {isPro === null ? (
+            // Loading state - show disabled button with loader
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    disabled
+                    size="sm"
+                    className="flex items-center justify-center rounded-full p-0.5 bg-transparent border-0 opacity-50"
+                  >
+                    <Loader2 className="h-3 w-3 text-black animate-spin" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white text-black border border-gray-200 rounded-xl shadow-lg p-3 max-w-[120px]">
+                  <p className="text-xs font-medium text-center leading-tight">Checking subscription...</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : isPro ? (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -595,7 +627,7 @@ export default function GoalDashboard() {
         <div className="mt-0">
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
             </div>
           ) : filteredGoals.length === 0 ? (
             <Card className="w-full rounded-[2rem] shadow-lg border-0">
@@ -669,7 +701,7 @@ export default function GoalDashboard() {
 
       {/* Goal Detail Dialog */}
       <Dialog open={showGoalDetail} onOpenChange={setShowGoalDetail}>
-        <DialogContent className="sm:max-w-[800px] p-0 max-h-[90vh] overflow-y-auto rounded-3xl">
+        <DialogContent className="sm:max-w-[800px] p-0 max-h-[90vh] overflow-y-auto rounded-3xl [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-400 [&::-webkit-scrollbar-thumb]:min-h-[40px]">
           <DialogTitle className="sr-only">Goal Details</DialogTitle>
           {selectedGoal && (
             <GoalDetail

@@ -88,7 +88,7 @@ export default function GoalCard({
   return (
     <>
     <Card 
-      className={`w-full rounded-[2rem] border-2 border-gray-200 flex flex-col hover:shadow-lg transition-all duration-700 ease-out hover:scale-105 bg-white relative ${
+      className={`w-full rounded-[2rem] border-2 border-gray-200 flex flex-col hover:shadow-lg transition-all duration-700 ease-out hover:scale-105 bg-white relative group ${
         isExpanded ? 'h-auto' : 'h-48 overflow-hidden'
       }`}
       style={{
@@ -114,7 +114,7 @@ export default function GoalCard({
                   e.stopPropagation();
                   setShowDeleteConfirm(true);
                 }}
-                className="h-3 w-3 p-0 text-red-500 hover:text-red-700 flex items-center justify-center"
+                className="h-3 w-3 p-0 text-red-500 hover:text-red-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
               >
                 <Trash2 className="h-2 w-2" strokeWidth={2.5} />
               </button>

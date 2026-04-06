@@ -35,6 +35,20 @@ export default function GoalProgressMap({
   const [clickedMilestone, setClickedMilestone] = useState<string | null>(null);
   const [celebratingMilestone, setCelebratingMilestone] = useState<string | null>(null);
 
+  // Calculate milestone positions once and memoize them
+  const milestonePositions = useMemo(() => {
+    return goal.milestones.map((milestone, index) => {
+      const position = ((index + 1) / (goal.milestones.length + 1)) * 100;
+      const yOffset = Math.sin(position * 0.1) * 15;
+      return { 
+        id: milestone.id, 
+        x: position, 
+        y: 50 + yOffset,
+        completed: milestone.completed 
+      };
+    });
+  }, [goal.milestones]);
+
   useEffect(() => {
     // Check if user has logged progress today
     const hasLoggedToday = checkIfLoggedToday(goal.lastUpdated);
@@ -169,8 +183,8 @@ export default function GoalProgressMap({
   const allDots = [...challengeDots, ...dots];
 
   return (
-    <Card className="w-full overflow-hidden bg-gray-100 border-2 border-gray-300">
-      <CardHeader className="pb-2 border-b border-gray-300">
+    <Card className="w-full overflow-hidden bg-white border-0 rounded-2xl shadow-none">
+      <CardHeader className="pb-2 bg-white">
         <CardTitle className="text-lg flex items-center gap-2 text-gray-800">
           Goal Map
           {!checkIfLoggedToday(goal.lastUpdated) && (
@@ -183,7 +197,7 @@ export default function GoalProgressMap({
       </CardHeader>
 
       <CardContent className="pt-4">
-        <div className="relative h-48 w-full overflow-hidden rounded-lg bg-white border border-gray-300 shadow-inner">
+        <div className="relative h-48 w-full overflow-hidden rounded-xl bg-white border border-gray-200 shadow-inner">
           {/* Star-like background */}
           <div className="absolute inset-0">
             {Array.from({ length: 50 }).map((_, i) => (
@@ -280,9 +294,7 @@ export default function GoalProgressMap({
 
           {/* Milestone Markers */}
           {goal.milestones.map((milestone, index) => {
-            const position = ((index + 1) / (goal.milestones.length + 1)) * 100;
-            const yOffset =
-              Math.sin(position * 0.1) * 15 + (Math.random() * 6 - 3);
+            const pos = milestonePositions[index];
             const isClicked = clickedMilestone === milestone.id;
             const isCelebrating = celebratingMilestone === milestone.id;
             const isToggling = togglingMilestoneId === milestone.id;
@@ -294,8 +306,8 @@ export default function GoalProgressMap({
                   isClicked ? "scale-125" : ""
                 } ${isToggling ? "pointer-events-none" : ""}`}
                 style={{
-                  left: `${position}%`,
-                  top: `${50 + yOffset}%`,
+                  left: `${pos.x}%`,
+                  top: `${pos.y}%`,
                 }}
                 onClick={() => {
                   setClickedMilestone(milestone.id);
@@ -357,7 +369,7 @@ export default function GoalProgressMap({
         </div>
 
         {/* Legend */}
-        <div className="mt-4 pt-3 border-t border-gray-300 flex flex-wrap gap-4 justify-center">
+        <div className="mt-4 pt-3 border-t border-gray-200 flex flex-wrap gap-4 justify-center">
           <div className="flex items-center gap-1.5 text-xs text-gray-600">
             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
             <span>Progress Dots</span>
