@@ -34,32 +34,48 @@ export default async function Pricing() {
         console.log('API Key:', polarApiKey ? `${polarApiKey.substring(0, 15)}...` : 'Missing');
 
         if (polarApiKey && polarOrgId) {
-            const response = await fetch(
-                `https://sandbox-api.polar.sh/v1/products?organization_id=${polarOrgId}&is_archived=false`,
-                {
-                    headers: {
-                        "Authorization": `Bearer ${polarApiKey}`,
-                        "Content-Type": "application/json",
-                    },
-                    cache: "no-store",
-                }
-            );
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-            console.log('Polar API response status:', response.status);
-
-            if (response.ok) {
-                const data = await response.json();
-                // Filter to only show products with recurring prices
-                polarProducts = (data.items || []).filter((product: any) => 
-                    product.prices?.some((price: any) => price.recurring_interval === 'month' || price.recurring_interval === 'year')
+            try {
+                const response = await fetch(
+                    `https://sandbox-api.polar.sh/v1/products?organization_id=${polarOrgId}&is_archived=false`,
+                    {
+                        headers: {
+                            "Authorization": `Bearer ${polarApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        next: { revalidate: 300 }, // Cache for 5 minutes
+                        signal: controller.signal,
+                    }
                 );
-                console.log('✅ Polar products fetched:', polarProducts.length);
-                if (polarProducts.length > 0) {
-                    console.log('Products:', polarProducts.map((p: PolarProduct) => p.name).join(', '));
+
+                clearTimeout(timeoutId);
+
+                console.log('Polar API response status:', response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Filter to only show products with recurring prices
+                    polarProducts = (data.items || []).filter((product: any) => 
+                        product.prices?.some((price: any) => price.recurring_interval === 'month' || price.recurring_interval === 'year')
+                    );
+                    console.log('✅ Polar products fetched:', polarProducts.length);
+                    if (polarProducts.length > 0) {
+                        console.log('Products:', polarProducts.map((p: PolarProduct) => p.name).join(', '));
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('❌ Polar API error:', response.status, errorText);
                 }
-            } else {
-                const errorText = await response.text();
-                console.error('❌ Polar API error:', response.status, errorText);
+            } catch (fetchError: any) {
+                clearTimeout(timeoutId);
+                if (fetchError.name === 'AbortError') {
+                    console.error('❌ Polar API timeout after 5 seconds');
+                } else {
+                    console.error('❌ Polar API fetch error:', fetchError);
+                }
             }
         } else {
             console.warn('⚠️ Polar API key or Org ID missing');
