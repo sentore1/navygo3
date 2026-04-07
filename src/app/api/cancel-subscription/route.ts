@@ -3,9 +3,15 @@ import { createClient } from "@/supabase/server";
 import { cookies } from "next/headers";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-01-27.acacia",
-});
+// Initialize Stripe only when needed to avoid build-time errors
+const getStripe = () => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY is not configured");
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-01-27.acacia",
+  });
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -90,6 +96,7 @@ export async function POST(request: NextRequest) {
       // Cancel subscription in Stripe (sets cancel_at_period_end = true)
       if (subscriptionId) {
         try {
+          const stripe = getStripe();
           const subscription = await stripe.subscriptions.update(subscriptionId, {
             cancel_at_period_end: true,
           });
