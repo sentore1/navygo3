@@ -4,13 +4,27 @@ import { useState, useEffect } from "react";
 import { createClient } from "../../supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Loader2, CheckCircle, AlertCircle, CreditCard } from "lucide-react";
+import { Button } from "./ui/button";
+import { Loader2, CheckCircle, AlertCircle, CreditCard, ExternalLink, XCircle } from "lucide-react";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 
 export default function SubscriptionStatus() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [creatingPortal, setCreatingPortal] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -57,6 +71,104 @@ export default function SubscriptionStatus() {
       return format(new Date(dateString), "PPP");
     } catch (e) {
       return "Unknown date";
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!subscriptionData?.subscriptionDetails) return;
+
+    setCancelling(true);
+    try {
+      const provider = subscriptionData.subscriptionDetails.provider;
+      const details = subscriptionData.subscriptionDetails.details;
+
+      if (provider === "polar") {
+        // Cancel Polar subscription
+        const response = await fetch("/api/cancel-subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subscriptionId: details.subscription_id,
+            provider: "polar",
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to cancel subscription");
+        }
+
+        alert("Your subscription will be cancelled at the end of the current billing period.");
+        
+        // Refresh subscription data
+        window.location.reload();
+      } else if (provider === "stripe") {
+        // Cancel Stripe subscription
+        const response = await fetch("/api/cancel-subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subscriptionId: details.stripe_id,
+            provider: "stripe",
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to cancel subscription");
+        }
+
+        alert("Your subscription will be cancelled at the end of the current billing period.");
+        
+        // Refresh subscription data
+        window.location.reload();
+      } else if (provider === "kpay") {
+        alert("Please contact support to cancel your KPay subscription.");
+      }
+    } catch (err: any) {
+      console.error("Error cancelling subscription:", err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!subscriptionData?.subscriptionDetails) return;
+
+    setCreatingPortal(true);
+    try {
+      const provider = subscriptionData.subscriptionDetails.provider;
+
+      if (provider === "stripe") {
+        // Create Stripe customer portal session
+        const response = await fetch("/api/create-portal-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to create portal session");
+        }
+
+        // Redirect to Stripe portal
+        window.location.href = data.url;
+      } else if (provider === "polar") {
+        // Open Polar customer portal
+        const polarOrgId = process.env.NEXT_PUBLIC_POLAR_ORGANIZATION_ID;
+        window.open(`https://polar.sh/${polarOrgId}/portal`, "_blank");
+      } else if (provider === "kpay") {
+        alert("Please contact support to manage your KPay subscription.");
+      }
+    } catch (err: any) {
+      console.error("Error managing subscription:", err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setCreatingPortal(false);
     }
   };
 
@@ -165,6 +277,117 @@ export default function SubscriptionStatus() {
                   </p>
                 </div>
               )}
+
+            {/* Subscription Management Buttons */}
+            {subscriptionData?.hasActiveSubscription && (
+              <div className="mt-6 pt-4 border-t space-y-3">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Manage Subscription
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {/* Manage/Portal Button */}
+                  {(subscriptionData.subscriptionDetails.provider === "stripe" || 
+                    subscriptionData.subscriptionDetails.provider === "polar") && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleManageSubscription}
+                      disabled={creatingPortal}
+                      className="flex-1"
+                    >
+                      {creatingPortal ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Manage Billing
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Cancel Button */}
+                  {!subscriptionData.subscriptionDetails.details?.cancel_at_period_end && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={cancelling}
+                          className="flex-1"
+                        >
+                          {cancelling ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Cancelling...
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Cancel Subscription
+                            </>
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Your subscription will remain active until the end of your current billing period on{" "}
+                            <strong>
+                              {subscriptionData.subscriptionDetails.details?.current_period_end
+                                ? formatDate(subscriptionData.subscriptionDetails.details.current_period_end)
+                                : "the end of the period"}
+                            </strong>
+                            . After that, you'll lose access to Pro features including AI goal creation.
+                            <br /><br />
+                            You can resubscribe at any time from the pricing page.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleCancelSubscription}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Yes, Cancel Subscription
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+
+                {/* Cancellation Notice */}
+                {subscriptionData.subscriptionDetails.details?.cancel_at_period_end && (
+                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium text-amber-900">
+                          Subscription Cancelled
+                        </p>
+                        <p className="text-amber-700 mt-1">
+                          Your subscription will end on{" "}
+                          <strong>
+                            {formatDate(subscriptionData.subscriptionDetails.details.current_period_end)}
+                          </strong>
+                          . You can resubscribe anytime from the{" "}
+                          <a href="/pricing" className="underline">
+                            pricing page
+                          </a>
+                          .
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

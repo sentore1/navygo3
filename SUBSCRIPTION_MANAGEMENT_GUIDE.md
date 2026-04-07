@@ -1,94 +1,96 @@
 # Subscription Management Guide
 
 ## Overview
-This system now supports full subscription management including switching plans and cancellation.
 
-## Features Implemented
+Users can manage their subscriptions directly from the Settings page (`/settings`). This includes viewing subscription status, managing billing, and cancelling subscriptions.
 
-### 1. Subscription Switching
-Users can now switch between different subscription plans without cancelling their current subscription.
+## Features
 
-**How it works:**
-- When a user with an active subscription clicks on a different plan, the system calls `/api/change-subscription`
-- The API updates the subscription in Polar using the PATCH endpoint
-- The local database is updated to reflect the new plan
-- Billing is prorated automatically by Polar
+### 1. View Subscription Status
+Users can see:
+- ✅ Subscription status (Active, Trial, Inactive)
+- 📅 Renewal date
+- 💳 Payment provider (Stripe, Polar, KPay)
+- 📦 Current plan
 
-**User Flow:**
-1. User goes to `/pricing` page
-2. Sees their current plan marked as "Current Plan"
-3. Other plans show "Switch to This Plan" button
-4. Clicking the button shows a confirmation dialog
-5. Upon confirmation, the plan is switched immediately
-6. User is notified of success and page refreshes
+### 2. Manage Billing
+Users can access their billing portal to:
+- Update payment methods
+- View invoices
+- Change plans
+- Update billing information
 
-### 2. Subscription Cancellation
-Users can cancel their subscription while retaining access until the end of the billing period.
+**Supported Providers:**
+- **Stripe**: Opens Stripe Customer Portal
+- **Polar**: Opens Polar Customer Portal
+- **KPay**: Contact support (manual process)
 
-**How it works:**
-- User goes to `/settings/subscription` page
-- Clicks "Cancel Subscription" button
-- System calls `/api/cancel-subscription` which sets `cancel_at_period_end = true` in Polar
-- User retains access until the current period ends
-- After the period ends, Polar webhook will update the status to "canceled"
+### 3. Cancel Subscription
+Users can cancel their subscription with the following behavior:
+- ✅ Subscription remains active until the end of the billing period
+- ✅ Access to Pro features continues until period end
+- ✅ Clear notification of cancellation date
+- ✅ Can resubscribe anytime from pricing page
 
-**User Flow:**
-1. User goes to `/settings/subscription`
-2. Clicks "Cancel Subscription"
-3. Confirms the cancellation
-4. Subscription is marked to cancel at period end
-5. User sees a notice that they'll retain access until the billing period ends
-6. User can still switch to a different plan if they change their mind
+## How It Works
 
-### 3. Subscription Status Display
-The system shows clear subscription status across multiple pages:
+### Subscription Cancellation Flow
 
-**Pricing Page (`/pricing`):**
-- Shows all available plans
-- Highlights the current plan with "Active" badge
-- Shows "Switch to This Plan" for other plans
-- Displays subscription info box at the bottom with:
-  - Current status
-  - Renewal/cancellation date
-  - Helpful tips about switching plans
+```
+User clicks "Cancel Subscription"
+    ↓
+Confirmation dialog appears
+    ↓
+User confirms cancellation
+    ↓
+API call to /api/cancel-subscription
+    ↓
+Backend updates provider (Stripe/Polar)
+    ↓
+Sets cancel_at_period_end = true
+    ↓
+Updates local database
+    ↓
+User sees cancellation notice
+    ↓
+Subscription remains active until period end
+    ↓
+After period end, subscription becomes inactive
+```
 
-**Subscription Management Page (`/settings/subscription`):**
-- Shows current subscription details
-- Displays renewal date or cancellation date
-- Shows warning if subscription is set to cancel
-- Provides buttons to:
-  - Switch to different plan
-  - Cancel subscription (if not already cancelled)
+### Stripe Cancellation
+
+1. User clicks "Cancel Subscription"
+2. API calls `stripe.subscriptions.update()` with `cancel_at_period_end: true`
+3. Updates `subscriptions` table:
+   - `cancel_at_period_end = true`
+   - `canceled_at = current_timestamp`
+4. User retains access until `current_period_end`
+
+### Polar Cancellation
+
+1. User clicks "Cancel Subscription"
+2. API calls Polar API: `POST /v1/subscriptions/{id}/cancel`
+3. Updates `polar_subscriptions` table:
+   - `cancel_at_period_end = true`
+   - `updated_at = current_timestamp`
+4. User retains access until `current_period_end`
+
+### KPay Cancellation
+
+KPay subscriptions require manual cancellation through support.
 
 ## API Endpoints
 
-### `/api/change-subscription` (POST)
-Changes the user's subscription to a different plan.
+### POST /api/cancel-subscription
+
+Cancels a user's subscription (sets to cancel at period end).
 
 **Request Body:**
 ```json
 {
-  "newPriceId": "price_xxx",
-  "interval": "month" | "year"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Subscription plan changed successfully",
-  "subscription": { /* updated subscription data */ }
-}
-```
-
-### `/api/cancel-subscription` (POST)
-Cancels the user's subscription at the end of the billing period.
-
-**Request Body:**
-```json
-{
-  "subscriptionId": "sub_xxx"
+  "subscriptionId": "sub_xxxxx",
+  "provider": "stripe" | "polar"
 }
 ```
 
@@ -100,76 +102,261 @@ Cancels the user's subscription at the end of the billing period.
 }
 ```
 
-### `/api/clear-subscription` (POST)
-**For testing only** - Immediately cancels and clears subscription from database.
+**Errors:**
+- `401`: Unauthorized (not logged in)
+- `400`: Invalid provider
+- `500`: Provider not configured or API error
+
+### POST /api/create-portal-session
+
+Creates a Stripe Customer Portal session for managing billing.
+
+**Response:**
+```json
+{
+  "url": "https://billing.stripe.com/session/xxxxx"
+}
+```
+
+**Errors:**
+- `401`: Unauthorized
+- `404`: No active Stripe subscription found
+- `500`: Stripe not configured
 
 ## Database Schema
 
-### `polar_subscriptions` table
-Key fields:
-- `subscription_id`: Polar subscription ID
-- `user_id`: User reference
-- `status`: active, canceled, etc.
-- `product_id`: Current product
-- `price_id`: Current price
-- `cancel_at_period_end`: Boolean flag
-- `current_period_end`: When the subscription period ends
+### subscriptions (Stripe)
 
-## User Experience Improvements
+```sql
+CREATE TABLE subscriptions (
+  id UUID PRIMARY KEY,
+  user_id TEXT REFERENCES users(user_id),
+  stripe_id TEXT UNIQUE,
+  status TEXT,
+  current_period_end BIGINT,
+  cancel_at_period_end BOOLEAN,
+  canceled_at BIGINT,
+  customer_id TEXT,
+  -- ... other fields
+);
+```
 
-### Before:
-- ❌ Users couldn't switch plans - got "you already have subscription" message
-- ❌ Cancel button called non-existent API endpoint
-- ❌ No clear indication of what happens after cancellation
-- ❌ "Current Plan" button was disabled and confusing
+### polar_subscriptions (Polar)
 
-### After:
-- ✅ Users can switch plans with one click
-- ✅ Cancel button works properly and sets cancel_at_period_end
-- ✅ Clear messaging about retaining access until period ends
-- ✅ "Current Plan" shows current status, other plans show "Switch to This Plan"
-- ✅ Visual indicators for cancelled subscriptions
-- ✅ Helpful tips and guidance throughout the flow
+```sql
+CREATE TABLE polar_subscriptions (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  subscription_id TEXT UNIQUE,
+  status TEXT,
+  current_period_end TIMESTAMPTZ,
+  cancel_at_period_end BOOLEAN DEFAULT false,
+  -- ... other fields
+);
+```
+
+## UI Components
+
+### SubscriptionStatus Component
+
+Located at: `src/components/subscription-status.tsx`
+
+**Features:**
+- Displays subscription status badge
+- Shows renewal date
+- Manage Billing button (Stripe/Polar)
+- Cancel Subscription button
+- Cancellation notice (when cancelled)
+
+**States:**
+1. **Active Subscription**
+   - Green badge
+   - Shows renewal date
+   - Manage + Cancel buttons
+
+2. **Cancelled (but still active)**
+   - Green badge
+   - Shows end date
+   - Warning notice
+   - No cancel button (already cancelled)
+
+3. **Trial Access**
+   - Blue badge
+   - Upgrade prompt
+
+4. **No Subscription**
+   - Red badge
+   - Link to pricing page
 
 ## Testing
 
-### Test Subscription Switching:
-1. Subscribe to a plan (e.g., Basic Monthly)
-2. Go to `/pricing`
-3. Click "Switch to This Plan" on a different plan
-4. Confirm the switch
-5. Verify the subscription is updated in Polar dashboard
-6. Verify the local database is updated
+### Test Stripe Cancellation
 
-### Test Subscription Cancellation:
-1. Have an active subscription
-2. Go to `/settings/subscription`
-3. Click "Cancel Subscription"
-4. Confirm cancellation
-5. Verify `cancel_at_period_end` is set to true in Polar
-6. Verify the UI shows cancellation notice
-7. Verify user can still switch to a different plan
+1. Log in as user with active Stripe subscription
+2. Go to `/settings`
+3. Scroll to "Subscription Status" card
+4. Click "Cancel Subscription"
+5. Confirm in dialog
+6. Verify:
+   - Success message appears
+   - Cancellation notice shows
+   - Subscription still shows as "Active"
+   - End date is displayed
+   - Cancel button is hidden
 
-## Important Notes
+### Test Polar Cancellation
 
-1. **Prorated Billing**: When switching plans, Polar automatically handles prorated billing
-2. **Immediate Access**: When upgrading, users get immediate access to new features
-3. **Cancellation Grace Period**: Users retain access until the end of their paid period
-4. **Reactivation**: Users can reactivate by switching to any plan before the period ends
+1. Log in as user with active Polar subscription
+2. Go to `/settings`
+3. Scroll to "Subscription Status" card
+4. Click "Cancel Subscription"
+5. Confirm in dialog
+6. Verify same as Stripe above
 
-## Troubleshooting
+### Test Stripe Portal
 
-### "Failed to change subscription plan"
-- Check Polar API key is configured
-- Verify the subscription exists in Polar
-- Check Polar API logs for detailed error
+1. Log in as user with active Stripe subscription
+2. Go to `/settings`
+3. Click "Manage Billing"
+4. Verify redirect to Stripe Customer Portal
+5. Verify can update payment method, view invoices
 
-### "Failed to cancel subscription"
-- Verify subscription ID is correct
-- Check Polar API key permissions
-- Ensure subscription is in "active" status
+### Test Polar Portal
 
-### Subscription not updating in UI
-- Check webhook is properly configured
-- Verify database RLS policies allow updates
-- Refresh the page manually
+1. Log in as user with active Polar subscription
+2. Go to `/settings`
+3. Click "Manage Billing"
+4. Verify opens Polar portal in new tab
+
+## Environment Variables
+
+Required for subscription management:
+
+```bash
+# Stripe
+STRIPE_SECRET_KEY=sk_test_xxxxx
+NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+
+# Polar
+POLAR_API_KEY=polar_xxxxx
+POLAR_API_URL=https://api.polar.sh  # or sandbox-api.polar.sh
+NEXT_PUBLIC_POLAR_ORGANIZATION_ID=org_xxxxx
+```
+
+## User Experience
+
+### Before Cancellation
+```
+┌─────────────────────────────────┐
+│ Subscription Status             │
+├─────────────────────────────────┤
+│ Status: ✅ Active               │
+│ Provider: Stripe                │
+│ Renews on: April 15, 2026       │
+│ Plan: Pro Monthly               │
+│                                 │
+│ [Manage Billing] [Cancel]      │
+└─────────────────────────────────┘
+```
+
+### After Cancellation
+```
+┌─────────────────────────────────┐
+│ Subscription Status             │
+├─────────────────────────────────┤
+│ Status: ✅ Active               │
+│ Provider: Stripe                │
+│ Renews on: April 15, 2026       │
+│ Plan: Pro Monthly               │
+│                                 │
+│ ⚠️ Subscription Cancelled       │
+│ Your subscription will end on   │
+│ April 15, 2026. You can         │
+│ resubscribe anytime from the    │
+│ pricing page.                   │
+│                                 │
+│ [Manage Billing]                │
+└─────────────────────────────────┘
+```
+
+## Resubscription
+
+After cancellation, users can resubscribe by:
+1. Going to `/pricing`
+2. Selecting a plan
+3. Completing checkout
+4. New subscription starts immediately
+
+## Webhook Handling
+
+### Stripe Webhooks
+
+Handle these events in `/api/payments-webhook`:
+- `customer.subscription.deleted` - Subscription ended
+- `customer.subscription.updated` - Cancellation or reactivation
+
+### Polar Webhooks
+
+Handle these events in `/api/polar-webhook`:
+- `subscription.canceled` - Subscription cancelled
+- `subscription.ended` - Subscription ended
+
+## Common Issues
+
+### Issue: "No active subscription found"
+**Solution**: User doesn't have an active subscription in the database. Check:
+```sql
+SELECT * FROM subscriptions WHERE user_id = 'USER_ID' AND status = 'active';
+SELECT * FROM polar_subscriptions WHERE user_id = 'USER_ID' AND status = 'active';
+```
+
+### Issue: "Failed to cancel subscription"
+**Solution**: Check API keys are configured:
+- Stripe: `STRIPE_SECRET_KEY`
+- Polar: `POLAR_API_KEY`
+
+### Issue: Cancel button doesn't appear
+**Solution**: Check if `cancel_at_period_end` is already true:
+```sql
+SELECT cancel_at_period_end FROM subscriptions WHERE user_id = 'USER_ID';
+```
+
+### Issue: Subscription still active after period end
+**Solution**: Webhooks may not have fired. Manually update:
+```sql
+UPDATE subscriptions 
+SET status = 'canceled' 
+WHERE user_id = 'USER_ID' 
+AND cancel_at_period_end = true 
+AND current_period_end < EXTRACT(EPOCH FROM NOW());
+```
+
+## Security
+
+- ✅ All endpoints require authentication
+- ✅ Users can only cancel their own subscriptions
+- ✅ API keys stored securely in environment variables
+- ✅ Confirmation dialog prevents accidental cancellation
+- ✅ Audit trail via webhook logs
+
+## Future Enhancements
+
+1. **Pause Subscription** - Allow users to pause instead of cancel
+2. **Downgrade Option** - Switch to a lower tier instead of cancelling
+3. **Cancellation Survey** - Ask why users are cancelling
+4. **Win-back Offers** - Offer discount to prevent cancellation
+5. **Email Notifications** - Send email when subscription is cancelled
+6. **Reactivation Flow** - Easy one-click reactivation before period ends
+
+## Support
+
+If users need help with subscriptions:
+1. Check subscription status in database
+2. Verify webhook logs for any errors
+3. Check provider dashboard (Stripe/Polar)
+4. Manually update database if needed
+5. Contact provider support if API issues
+
+## Summary
+
+The subscription management system provides users with full control over their subscriptions while maintaining a smooth experience. Cancellations are handled gracefully with continued access until the end of the billing period, and users can easily resubscribe at any time.

@@ -157,6 +157,13 @@ export default function AIGoalCreator({
       }
 
       if (data) {
+        // Check if this is a subscription error
+        if (data.requiresSubscription) {
+          setError("AI goal creation requires a Pro subscription. Please upgrade to use this feature.");
+          setLoading(false);
+          return;
+        }
+
         console.log("Successfully generated goal:", data);
         // Check if we got data directly or if it's in the data.data structure (fallback case)
         const goalData = data.data ? data.data : data;

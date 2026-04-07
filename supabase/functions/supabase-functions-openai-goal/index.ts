@@ -37,6 +37,50 @@ serve(async (req) => {
       });
     }
 
+    // Check if user is admin or has active subscription
+    const { data: userData, error: userDataError } = await supabaseClient
+      .from("users")
+      .select("role, has_trial_access")
+      .eq("id", user.id)
+      .single();
+
+    const isAdmin = userData?.role === "admin";
+    const hasTrialAccess = userData?.has_trial_access;
+
+    // Check for active subscriptions (Stripe or Polar)
+    const { data: stripeData } = await supabaseClient
+      .from("subscriptions")
+      .select("count")
+      .eq("user_id", user.id)
+      .eq("status", "active");
+
+    const { data: polarData } = await supabaseClient
+      .from("polar_subscriptions")
+      .select("count")
+      .eq("user_id", user.id)
+      .eq("status", "active");
+
+    const hasStripeSubscription = stripeData && stripeData.length > 0 && stripeData[0].count > 0;
+    const hasPolarSubscription = polarData && polarData.length > 0 && polarData[0].count > 0;
+    const hasActiveSubscription = hasStripeSubscription || hasPolarSubscription;
+
+    // Allow access if user is admin, has active subscription, or has trial access
+    if (!isAdmin && !hasActiveSubscription && !hasTrialAccess) {
+      console.log("User does not have Pro access");
+      return new Response(
+        JSON.stringify({ 
+          error: "AI goal creation requires a Pro subscription",
+          requiresSubscription: true 
+        }), 
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log(`User has access - Admin: ${isAdmin}, Subscription: ${hasActiveSubscription}, Trial: ${hasTrialAccess}`);
+
     // Get the prompt and difficulty from the request
     const { prompt, difficulty = "medium" } = await req.json();
 
