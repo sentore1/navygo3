@@ -114,7 +114,36 @@ export default function PricingClient({
         setLoading(priceId);
 
         try {
-            // Use API to create checkout
+            // If user has an active subscription, change the plan instead of creating new checkout
+            if (activeSubscription) {
+                if (!confirm(`Switch to ${productName} plan? Your billing will be adjusted accordingly.`)) {
+                    setLoading(null);
+                    return;
+                }
+
+                const response = await fetch("/api/change-subscription", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        newPriceId: priceId,
+                        interval: billingCycle,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || "Failed to change subscription");
+                }
+
+                alert("Subscription plan changed successfully!");
+                router.refresh();
+                setLoading(null);
+                return;
+            }
+
+            // No active subscription - create new checkout
             const response = await fetch("/api/polar-checkout", {
                 method: "POST",
                 headers: {
@@ -139,8 +168,8 @@ export default function PricingClient({
                 throw new Error("No checkout URL returned");
             }
         } catch (error: any) {
-            console.error("Error creating checkout:", error);
-            alert(error.message || "Failed to create checkout session");
+            console.error("Error with subscription:", error);
+            alert(error.message || "Failed to process subscription");
             setLoading(null);
         }
     };
@@ -309,7 +338,8 @@ export default function PricingClient({
                                     size="lg"
                                     className="w-full rounded-full"
                                     onClick={() => handleSubscribe(price.id, product.name)}
-                                    disabled={isActive || loading === price.id}
+                                    disabled={loading === price.id}
+                                    variant={isActive ? "outline" : "default"}
                                 >
                                     {loading === price.id ? (
                                         <>
@@ -319,7 +349,7 @@ export default function PricingClient({
                                     ) : isActive ? (
                                         "Current Plan"
                                     ) : activePlan && !isActive ? (
-                                        "Switch Plan"
+                                        "Switch to This Plan"
                                     ) : (
                                         "Get It Done"
                                     )}
@@ -332,8 +362,8 @@ export default function PricingClient({
 
             {activeSubscription && (
                 <div className="mt-12 max-w-2xl mx-auto">
-                    <div className="bg-muted/50 rounded-lg p-6">
-                        <h3 className="text-lg font-semibold mb-2">Your Subscription</h3>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold mb-2">Your Current Subscription</h3>
                         <div className="space-y-2 text-sm">
                             <p>
                                 <span className="text-muted-foreground">Status:</span>{" "}
@@ -341,12 +371,33 @@ export default function PricingClient({
                             </p>
                             {activeSubscription.current_period_end && (
                                 <p>
-                                    <span className="text-muted-foreground">Renews on:</span>{" "}
+                                    <span className="text-muted-foreground">
+                                        {activeSubscription.cancel_at_period_end ? "Access until:" : "Renews on:"}
+                                    </span>{" "}
                                     <span className="font-medium">
                                         {new Date(activeSubscription.current_period_end).toLocaleDateString()}
                                     </span>
                                 </p>
                             )}
+                            {activeSubscription.cancel_at_period_end && (
+                                <p className="text-yellow-700 font-medium mt-2">
+                                    ⚠️ Your subscription is scheduled to cancel. You can switch to a different plan above.
+                                </p>
+                            )}
+                            {!activeSubscription.cancel_at_period_end && (
+                                <p className="text-blue-700 mt-2">
+                                    💡 You can switch to a different plan anytime. Click "Switch to This Plan" on any plan above.
+                                </p>
+                            )}
+                        </div>
+                        <div className="mt-4">
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => router.push("/settings/subscription")}
+                            >
+                                Manage Subscription
+                            </Button>
                         </div>
                     </div>
                 </div>

@@ -124,14 +124,14 @@ export default function LeaderboardSection() {
   return (
     <section className="py-16">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">Top Performers</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">Top Performers</h2>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4">
             Join our community of achievers crushing their goals every day
           </p>
         </div>
 
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto px-2 sm:px-0">
           {/* Leaderboard List */}
           <TooltipProvider>
             <div className="space-y-3">
@@ -141,14 +141,14 @@ export default function LeaderboardSection() {
                 return (
                   <div
                     key={user.id}
-                    className={`flex items-center gap-4 p-5 rounded-[3rem] bg-white transition-all ${
+                    className={`flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-[2rem] sm:rounded-[3rem] bg-white transition-all ${
                       isTop3
                         ? 'shadow-lg hover:shadow-xl'
                         : 'shadow-md hover:shadow-lg'
                     }`}
                   >
                     <div
-                      className={`flex items-center justify-center w-12 h-12 rounded-full text-sm font-bold ${
+                      className={`hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full text-xs sm:text-sm font-bold flex-shrink-0 ${
                         index === 0
                           ? 'bg-primary text-primary-foreground'
                           : isTop3
@@ -157,12 +157,12 @@ export default function LeaderboardSection() {
                       }`}
                     >
                       {index === 0 ? (
-                        <Trophy className="h-5 w-5" />
+                        <Trophy className="h-4 w-4 sm:h-5 sm:w-5" />
                       ) : (
                         <span>{index + 1}</span>
                       )}
                     </div>
-                    <Avatar className={`h-14 w-14 ${isTop3 ? 'border-2 border-primary/30' : ''}`}>
+                    <Avatar className={`h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 ${isTop3 ? 'border-2 border-primary/30' : ''}`}>
                       <AvatarImage src={user.avatar_url} />
                       <AvatarFallback>
                         {user.name
@@ -174,54 +174,58 @@ export default function LeaderboardSection() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold truncate ${isTop3 ? 'text-lg' : ''}`}>
-                        {user.name || "Anonymous"}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className={`font-semibold truncate ${isTop3 ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
+                          {user.name || "Anonymous"}
+                        </p>
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                          <div className="text-right">
+                            <p className={`font-bold leading-none ${isTop3 ? 'text-lg sm:text-2xl' : 'text-base sm:text-xl'}`}>
+                              {user.total_score}
+                            </p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">points</p>
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="cursor-help">
+                                <RankBadge
+                                  chevrons={rankProps.chevrons}
+                                  stars={rankProps.stars}
+                                  rank={rankProps.rank}
+                                  userScore={user.total_score}
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="max-w-xs">
+                              <div className="space-y-2">
+                                <p className="font-semibold">{rankProps.rank}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {rankProps.description}
+                                </p>
+                                {rankProps.pointsNeeded > 0 && (
+                                  <div className="pt-2 border-t">
+                                    <p className="text-xs text-muted-foreground">
+                                      Next rank: <span className="font-medium text-foreground">{rankProps.nextRank}</span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {rankProps.pointsNeeded} points needed
+                                    </p>
+                                  </div>
+                                )}
+                                {rankProps.pointsNeeded === 0 && (
+                                  <p className="text-xs text-primary font-medium pt-2 border-t">
+                                    {rankProps.nextRank}
+                                  </p>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </div>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {user.completed_goals} goals • {user.max_streak} day streak
                       </p>
                     </div>
-                    <div className="text-right mr-3">
-                      <p className={`font-bold ${isTop3 ? 'text-2xl' : 'text-xl'}`}>
-                        {user.total_score}
-                      </p>
-                      <p className="text-xs text-muted-foreground">points</p>
-                    </div>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="cursor-help">
-                          <RankBadge
-                            chevrons={rankProps.chevrons}
-                            stars={rankProps.stars}
-                            rank={rankProps.rank}
-                            userScore={user.total_score}
-                          />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" className="max-w-xs">
-                        <div className="space-y-2">
-                          <p className="font-semibold">{rankProps.rank}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {rankProps.description}
-                          </p>
-                          {rankProps.pointsNeeded > 0 && (
-                            <div className="pt-2 border-t">
-                              <p className="text-xs text-muted-foreground">
-                                Next rank: <span className="font-medium text-foreground">{rankProps.nextRank}</span>
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {rankProps.pointsNeeded} points needed
-                              </p>
-                            </div>
-                          )}
-                          {rankProps.pointsNeeded === 0 && (
-                            <p className="text-xs text-primary font-medium pt-2 border-t">
-                              {rankProps.nextRank}
-                            </p>
-                          )}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
                   </div>
                 );
               })}

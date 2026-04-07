@@ -107,7 +107,7 @@ export const HeroHeader = () => {
                                             asChild
                                             variant="outline"
                                             size="sm"
-                                            className={cn('rounded-full', isScrolled && 'lg:hidden')}>
+                                            className="rounded-full">
                                             <Link href="/sign-in">
                                                 <span>Login</span>
                                             </Link>
@@ -115,17 +115,9 @@ export const HeroHeader = () => {
                                         <Button
                                             asChild
                                             size="sm"
-                                            className={cn('rounded-full', isScrolled && 'lg:hidden')}>
+                                            className="rounded-full">
                                             <Link href="/sign-up">
                                                 <span>Sign Up</span>
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            asChild
-                                            size="sm"
-                                            className={cn('rounded-full', isScrolled ? 'lg:inline-flex' : 'hidden')}>
-                                            <Link href="/dashboard">
-                                                <span>Get Started</span>
                                             </Link>
                                         </Button>
                                     </>

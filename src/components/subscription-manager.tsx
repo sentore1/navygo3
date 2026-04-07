@@ -16,14 +16,12 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCancelSubscription = async () => {
-    if (!confirm("Are you sure you want to cancel your subscription? You'll lose access at the end of your billing period.")) {
+    if (!confirm("Are you sure you want to cancel your subscription? You'll retain access until the end of your billing period.")) {
       return;
     }
 
     setIsLoading(true);
     try {
-      // In a real app, you'd call Polar API to cancel the subscription
-      // For now, we'll just clear it from the database (for testing)
       const response = await fetch("/api/cancel-subscription", {
         method: "POST",
         headers: {
@@ -33,7 +31,7 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
       });
 
       if (response.ok) {
-        alert("Subscription cancelled successfully");
+        alert("Subscription cancelled successfully. You'll retain access until the end of your billing period.");
         router.refresh();
       } else {
         const error = await response.json();
@@ -41,7 +39,7 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
       }
     } catch (error) {
       console.error("Error cancelling subscription:", error);
-      alert("An error occurred");
+      alert("An error occurred while cancelling your subscription");
     } finally {
       setIsLoading(false);
     }
@@ -69,7 +67,9 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
           </p>
           {subscription?.current_period_end && (
             <p>
-              <span className="text-muted-foreground">Renews on:</span>{" "}
+              <span className="text-muted-foreground">
+                {subscription?.cancel_at_period_end ? "Access until:" : "Renews on:"}
+              </span>{" "}
               <span className="font-medium">
                 {new Date(subscription.current_period_end).toLocaleDateString()}
               </span>
@@ -81,11 +81,19 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
               <span className="font-medium">{subscription.product_id}</span>
             </p>
           )}
+          {subscription?.cancel_at_period_end && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                Your subscription is set to cancel at the end of the billing period. 
+                You'll retain access until then.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="bg-card rounded-lg border p-6">
-        <h2 className="text-xl font-semibold mb-4">Actions</h2>
+        <h2 className="text-xl font-semibold mb-4">Manage Subscription</h2>
         <div className="space-y-4">
           <div>
             <Button 
@@ -93,11 +101,14 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
               variant="outline"
               className="w-full sm:w-auto"
             >
-              Change Plan
+              {subscription ? "Switch to Different Plan" : "View Plans"}
             </Button>
+            <p className="text-xs text-muted-foreground mt-2">
+              {subscription ? "Upgrade or downgrade your subscription" : "Choose a plan that fits your needs"}
+            </p>
           </div>
           
-          {subscription && (
+          {subscription && !subscription.cancel_at_period_end && (
             <div>
               <Button 
                 onClick={handleCancelSubscription}
@@ -116,6 +127,15 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
               </Button>
               <p className="text-xs text-muted-foreground mt-2">
                 You'll retain access until the end of your billing period
+              </p>
+            </div>
+          )}
+
+          {subscription?.cancel_at_period_end && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                Your subscription is scheduled to cancel. To reactivate, please contact support 
+                or subscribe to a new plan after your current period ends.
               </p>
             </div>
           )}
