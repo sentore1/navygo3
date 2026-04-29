@@ -27,7 +27,7 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ subscriptionId: subscription?.subscription_id }),
+        body: JSON.stringify({ subscriptionId: subscription?.subscription_id, provider: "polar" }),
       });
 
       if (response.ok) {
@@ -140,51 +140,6 @@ export default function SubscriptionManager({ subscription, userData, userId }: 
             </div>
           )}
         </div>
-      </div>
-
-      {/* For Testing Only */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <h3 className="text-sm font-semibold text-yellow-800 mb-2">Testing Tools</h3>
-        <p className="text-xs text-yellow-700 mb-4">
-          These buttons are for testing only. Remove in production.
-        </p>
-        <Button 
-          onClick={async () => {
-            if (confirm("Cancel subscription in Polar and clear from database?")) {
-              setIsLoading(true);
-              const response = await fetch("/api/clear-subscription", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ 
-                  subscriptionId: subscription?.subscription_id 
-                }),
-              });
-              if (response.ok) {
-                alert("Subscription cancelled and cleared");
-                router.refresh();
-                router.push("/pricing");
-              } else {
-                const error = await response.json();
-                alert(error.error || "Failed to clear subscription");
-              }
-              setIsLoading(false);
-            }
-          }}
-          variant="outline"
-          size="sm"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-              Clearing...
-            </>
-          ) : (
-            "Cancel in Polar & Clear (Test Only)"
-          )}
-        </Button>
       </div>
     </div>
   );

@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
       cnumber: user_id,
       pmethod: "cc",
       retailerid: kpayRetailerId,
-      returl: `${req.headers.get('origin') || 'http://localhost:3000'}/api/kpay-webhook`,
-      redirecturl: `${req.headers.get('origin') || 'http://localhost:3000'}/success?tid=${refid}`,
+      returl: `${process.env.NEXT_PUBLIC_SITE_URL || req.headers.get('origin') || 'http://localhost:3000'}/api/kpay-webhook`,
+      redirecturl: `${process.env.NEXT_PUBLIC_SITE_URL || req.headers.get('origin') || 'http://localhost:3000'}/success?tid=${refid}`,
       bankid: "000",
     };
 

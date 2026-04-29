@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         product_price_id: productId,
         customer_email: userEmail,
-        success_url: `${request.nextUrl.origin}/success?session_id={CHECKOUT_ID}`,
+        success_url: `${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/success?session_id={CHECKOUT_ID}`,
         metadata: {
           user_id: user.id,
           interval: interval,

@@ -1,0 +1,36 @@
+# Quick Curl Test for stokeoriginal@gmail.com
+
+## Step 1: Get Auth Token
+
+curl -X POST "https://YOUR_PROJECT.supabase.co/auth/v1/token?grant_type=password" \
+  -H "apikey: YOUR_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"stokeoriginal@gmail.com","password":"USER_PASSWORD"}'
+
+## Step 2: Test AI (use token from Step 1)
+
+curl -X POST "https://YOUR_PROJECT.supabase.co/functions/v1/supabase-functions-generate-ai-goal" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "apikey: YOUR_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"I want to learn Spanish","difficulty":"medium"}'
+
+## What You'll See:
+
+### If subscription check fails:
+{"error":"AI goal creation requires a Pro subscription","requiresSubscription":true}
+→ Type mismatch issue - Run FIX_STEP_BY_STEP.sql
+
+### If AI disabled:
+{"title":"I want to learn Spanish","milestones":[{"title":"Step 1: Get started..."}]}
+→ Generic milestones - Enable AI in /admin/settings
+
+### If working:
+{"title":"Learn Spanish","milestones":[{"title":"Complete beginner Spanish course..."}]}
+→ Specific milestones - AI is working!
+
+## Replace These:
+- YOUR_PROJECT: Your Supabase project ID
+- YOUR_ANON_KEY: From .env.local (NEXT_PUBLIC_SUPABASE_ANON_KEY)
+- USER_PASSWORD: The user's password
+- YOUR_ACCESS_TOKEN: From Step 1 response

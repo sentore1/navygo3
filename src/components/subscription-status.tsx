@@ -24,6 +24,7 @@ export default function SubscriptionStatus() {
   const [error, setError] = useState<string | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [cancellingTrial, setCancellingTrial] = useState(false);
   const [creatingPortal, setCreatingPortal] = useState(false);
   const supabase = createClient();
 
@@ -74,6 +75,28 @@ export default function SubscriptionStatus() {
     }
   };
 
+  const handleCancelTrial = async () => {
+    setCancellingTrial(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("users")
+        .update({ has_trial_access: false, updated_at: new Date().toISOString() })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      window.location.reload();
+    } catch (err: any) {
+      console.error("Error cancelling trial:", err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setCancellingTrial(false);
+    }
+  };
+
   const handleCancelSubscription = async () => {
     if (!subscriptionData?.subscriptionDetails) return;
 
@@ -96,10 +119,34 @@ export default function SubscriptionStatus() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Failed to cancel subscription");
+          // Provide more helpful error message
+          const errorMsg = data.error || "Failed to cancel subscription";
+          console.error("Cancellation error:", errorMsg);
+          
+          // Show detailed error with next steps
+          alert(
+            `Unable to cancel subscription: ${errorMsg}\n\n` +
+            `Possible reasons:\n` +
+            `• The subscription may not exist in Polar anymore\n` +
+            `• There may be a temporary connection issue\n` +
+            `• The subscription ID may be invalid\n\n` +
+            `Please try again in a few moments, or contact support if the issue persists.\n` +
+            `You can also manage your subscription directly at: https://polar.sh`
+          );
+          
+          throw new Error(errorMsg);
         }
 
-        alert("Your subscription will be cancelled at the end of the current billing period.");
+        // Check if it was a local-only cancellation
+        if (data.localOnly) {
+          alert(
+            "Subscription cancelled in your account.\n\n" +
+            "Note: We couldn't cancel it in Polar's system. " +
+            "Please also cancel it manually at https://polar.sh to avoid future charges."
+          );
+        } else {
+          alert("Your subscription will be cancelled at the end of the current billing period.");
+        }
         
         // Refresh subscription data
         window.location.reload();
@@ -117,7 +164,15 @@ export default function SubscriptionStatus() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Failed to cancel subscription");
+          const errorMsg = data.error || "Failed to cancel subscription";
+          console.error("Cancellation error:", errorMsg);
+          
+          alert(
+            `Unable to cancel subscription: ${errorMsg}\n\n` +
+            `Please try again in a few moments, or contact support if the issue persists.`
+          );
+          
+          throw new Error(errorMsg);
         }
 
         alert("Your subscription will be cancelled at the end of the current billing period.");
@@ -129,7 +184,7 @@ export default function SubscriptionStatus() {
       }
     } catch (err: any) {
       console.error("Error cancelling subscription:", err);
-      alert(`Error: ${err.message}`);
+      // Error already shown in alert above
     } finally {
       setCancelling(false);
     }
@@ -158,9 +213,20 @@ export default function SubscriptionStatus() {
         // Redirect to Stripe portal
         window.location.href = data.url;
       } else if (provider === "polar") {
-        // Open Polar customer portal
-        const polarOrgId = process.env.NEXT_PUBLIC_POLAR_ORGANIZATION_ID;
-        window.open(`https://polar.sh/${polarOrgId}/portal`, "_blank");
+        // Get Polar customer portal URL from server
+        const response = await fetch("/api/get-polar-portal", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to get portal URL");
+        }
+        
+        // Open Polar portal in new tab
+        window.open(data.url, "_blank");
       } else if (provider === "kpay") {
         alert("Please contact support to manage your KPay subscription.");
       }
@@ -202,8 +268,7 @@ export default function SubscriptionStatus() {
                   </Badge>
                 ) : subscriptionData?.hasTrialAccess ? (
                   <Badge
-                    variant="outline"
-                    className="border-blue-500 text-blue-600"
+                    className="bg-green-600 text-white border-green-600"
                   >
                     Trial Access
                   </Badge>
@@ -253,7 +318,7 @@ export default function SubscriptionStatus() {
 
             {subscriptionData?.hasTrialAccess &&
               !subscriptionData?.hasActiveSubscription && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-md text-sm text-blue-700">
+                <div className="mt-4 p-3 rounded-md text-sm text-black">
                   <p className="font-medium">
                     You currently have trial access.
                   </p>
@@ -261,6 +326,38 @@ export default function SubscriptionStatus() {
                     To ensure uninterrupted access, please subscribe to a paid
                     plan.
                   </p>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      onClick={() => window.location.href = "/pricing"}
+                    >
+                      View Plans
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="bg-white text-black border-gray-300 hover:bg-gray-50" disabled={cancellingTrial}>
+                          {cancellingTrial ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Cancelling...</> : "Cancel Trial"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancel Trial Access?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            You will immediately lose access to all trial features. You can always subscribe to a paid plan to regain access.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep Trial</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleCancelTrial}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Yes, Cancel Trial
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               )}
 

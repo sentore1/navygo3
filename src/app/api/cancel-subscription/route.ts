@@ -41,10 +41,20 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (!subscriptionId) {
+        console.error("No subscription ID provided for Polar cancellation");
+        return NextResponse.json(
+          { error: "Subscription ID is missing. Please contact support." },
+          { status: 400 }
+        );
+      }
+
       console.log('Cancelling Polar subscription:', subscriptionId);
+      console.log('Using Polar API URL:', apiUrl);
 
       // Cancel subscription in Polar (sets cancel_at_period_end = true)
-      if (subscriptionId) {
+      let polarCancelSuccess = false;
+      try {
         const cancelResponse = await fetch(`${apiUrl}/v1/subscriptions/${subscriptionId}/cancel`, {
           method: "POST",
           headers: {
@@ -55,14 +65,34 @@ export async function POST(request: NextRequest) {
 
         if (!cancelResponse.ok) {
           const errorText = await cancelResponse.text();
-          console.error("Failed to cancel in Polar:", errorText);
-          return NextResponse.json(
-            { error: "Failed to cancel subscription with payment provider" },
-            { status: 500 }
-          );
+          console.error("Failed to cancel in Polar:", {
+            status: cancelResponse.status,
+            statusText: cancelResponse.statusText,
+            error: errorText,
+            subscriptionId,
+            apiUrl
+          });
+          
+          // If subscription not found in Polar (404), we'll cancel locally
+          if (cancelResponse.status === 404) {
+            console.log('⚠️  Subscription not found in Polar, will cancel locally only');
+            polarCancelSuccess = false; // Will trigger local cancellation below
+          } else if (cancelResponse.status === 401 || cancelResponse.status === 403) {
+            console.log('⚠️  Authentication failed with Polar, will cancel locally only');
+            polarCancelSuccess = false; // Will trigger local cancellation below
+          } else {
+            // For other errors, still try to cancel locally
+            console.log('⚠️  Polar API error, will cancel locally only');
+            polarCancelSuccess = false;
+          }
+        } else {
+          console.log('✅ Subscription cancelled in Polar');
+          polarCancelSuccess = true;
         }
-
-        console.log('✅ Subscription cancelled in Polar');
+      } catch (fetchError: any) {
+        console.error("Network error cancelling Polar subscription:", fetchError);
+        console.log('⚠️  Network error, will cancel locally only');
+        polarCancelSuccess = false;
       }
 
       // Update local database to reflect cancellation
@@ -77,9 +107,22 @@ export async function POST(request: NextRequest) {
 
       if (polarError) {
         console.error("Error updating Polar subscriptions:", polarError);
+        return NextResponse.json(
+          { error: "Failed to update subscription in database" },
+          { status: 500 }
+        );
       }
 
       console.log('✅ Polar subscription set to cancel at period end for user:', user.id);
+      
+      // Return success with a note if Polar API failed but local cancellation succeeded
+      return NextResponse.json({
+        success: true,
+        message: polarCancelSuccess 
+          ? "Subscription will be cancelled at the end of the billing period"
+          : "Subscription cancelled locally. Note: Could not cancel in Polar - you may need to cancel manually at polar.sh",
+        localOnly: !polarCancelSuccess
+      });
     }
     
     // Handle Stripe cancellation
