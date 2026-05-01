@@ -72,67 +72,46 @@ export async function middleware(request: NextRequest) {
       console.log("User ID:", user.id);
       console.log("User Email:", user.email);
 
-      // Check if the user has an active subscription
-      const { data: stripeData, error: stripeError } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("status", "active");
-
-      if (stripeError) {
-        console.error(
-          "Error checking Stripe subscription:",
-          stripeError.message,
-        );
-      } else {
-        console.log("Stripe subscriptions found:", stripeData?.length || 0);
-      }
-
-      const { data: polarData, error: polarError } = await supabase
-        .from("polar_subscriptions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("status", "active");
-
-      if (polarError) {
-        console.error("Error checking Polar subscription:", polarError.message);
-      } else {
-        console.log("Polar subscriptions found:", polarData?.length || 0);
-        if (polarData && polarData.length > 0) {
-          console.log("Polar subscription details:", polarData[0]);
-        }
-      }
-
-      // Check for trial access and pending subscriptions
+      // Check user subscription status and expiration from users table (single source of truth)
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("has_trial_access, subscription_status")
+        .select("subscription_status, subscription_expires_at, has_trial_access, role")
         .eq("id", user.id)
         .single();
 
       if (userError) {
-        console.error("Error checking user trial access:", userError.message);
-      } else {
-        console.log("User data:", userData);
-      }
-
-      const hasStripeSubscription = stripeData && stripeData.length > 0;
-      const hasPolarSubscription = polarData && polarData.length > 0;
-      const hasTrialAccess = userData && userData.has_trial_access;
-      const hasPendingSubscription = userData && userData.subscription_status === "pending";
-
-      console.log("Has Stripe subscription:", hasStripeSubscription);
-      console.log("Has Polar subscription:", hasPolarSubscription);
-      console.log("Has trial access:", hasTrialAccess);
-      console.log("Has pending subscription:", hasPendingSubscription);
-
-      // If no active subscription, pending subscription, or trial access, redirect to pricing page
-      if (!hasStripeSubscription && !hasPolarSubscription && !hasTrialAccess && !hasPendingSubscription) {
-        console.log("❌ No active subscription found, redirecting to pricing");
+        console.error("Error checking user subscription:", userError.message);
         return NextResponse.redirect(new URL("/pricing", request.url));
       }
 
-      console.log("✅ User has active subscription, pending subscription, or trial access");
+      console.log("User subscription data:", userData);
+
+      // Allow admins to bypass subscription check
+      if (userData?.role === 'admin') {
+        console.log("✅ User is admin, allowing access");
+        return response;
+      }
+
+      // Allow trial access
+      if (userData?.has_trial_access) {
+        console.log("✅ User has trial access");
+        return response;
+      }
+
+      // Check for active subscription with valid expiration
+      const hasActiveSubscription = 
+        userData?.subscription_status === 'active' && 
+        userData?.subscription_expires_at &&
+        new Date(userData.subscription_expires_at) > new Date();
+
+      if (!hasActiveSubscription) {
+        console.log("❌ No active subscription found, redirecting to pricing");
+        console.log("Status:", userData?.subscription_status);
+        console.log("Expires at:", userData?.subscription_expires_at);
+        return NextResponse.redirect(new URL("/pricing", request.url));
+      }
+
+      console.log("✅ User has active subscription");
     }
 
     return response;

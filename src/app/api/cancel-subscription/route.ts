@@ -15,7 +15,8 @@ const getStripe = () => {
 
 export async function POST(request: NextRequest) {
   try {
-    const { subscriptionId, provider } = await request.json();
+    const { subscriptionId: rawSubscriptionId, provider } = await request.json();
+    let subscriptionId = rawSubscriptionId;
     
     const cookieStore = await cookies();
     const supabase = await createClient(cookieStore);
@@ -42,11 +43,62 @@ export async function POST(request: NextRequest) {
       }
 
       if (!subscriptionId) {
-        console.error("No subscription ID provided for Polar cancellation");
-        return NextResponse.json(
-          { error: "Subscription ID is missing. Please contact support." },
-          { status: 400 }
-        );
+        // Try to get subscription_id from users table as fallback
+        const { data: userData } = await supabase
+          .from("users")
+          .select("subscription_id")
+          .eq("id", user.id)
+          .single();
+
+        if (userData?.subscription_id) {
+          subscriptionId = userData.subscription_id;
+          console.log('Using subscription_id from users table:', subscriptionId);
+        } else {
+          // Last resort: Fetch subscriptions from Polar by customer email
+          console.log('No subscription ID found, fetching from Polar by email:', user.email);
+          
+          try {
+            const subsResponse = await fetch(`${apiUrl}/v1/subscriptions?customer_email=${encodeURIComponent(user.email)}&status=active&limit=10`, {
+              headers: {
+                "Authorization": `Bearer ${polarApiKey}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (subsResponse.ok) {
+              const subsData = await subsResponse.json();
+              console.log('Found subscriptions from Polar:', subsData.items?.length || 0);
+              
+              // Find the first active subscription
+              const activeSub = subsData.items?.find((s: any) => s.status === 'active');
+              
+              if (activeSub) {
+                subscriptionId = activeSub.id;
+                console.log('✅ Found active subscription ID from Polar:', subscriptionId);
+              }
+            }
+          } catch (fetchError) {
+            console.error('Error fetching subscriptions from Polar:', fetchError);
+          }
+
+          if (!subscriptionId) {
+            console.log('No subscription ID anywhere — cancelling locally only');
+            await supabase
+              .from("users")
+              .update({
+                subscription_status: "inactive",
+                subscription_expires_at: null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", user.id);
+
+            return NextResponse.json({
+              success: true,
+              message: "Subscription cancelled locally. Could not find subscription in Polar - you may need to cancel manually at polar.sh",
+              localOnly: true
+            });
+          }
+        }
       }
 
       console.log('Cancelling Polar subscription:', subscriptionId);
@@ -113,14 +165,24 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log('✅ Polar subscription set to cancel at period end for user:', user.id);
+      // Update users table to revoke access immediately (no grace period)
+      await supabase
+        .from("users")
+        .update({
+          subscription_status: "inactive",
+          subscription_expires_at: null, // Clear expiration to revoke access immediately
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      console.log('✅ Polar subscription cancelled and access revoked immediately for user:', user.id);
       
       // Return success with a note if Polar API failed but local cancellation succeeded
       return NextResponse.json({
         success: true,
         message: polarCancelSuccess 
-          ? "Subscription will be cancelled at the end of the billing period"
-          : "Subscription cancelled locally. Note: Could not cancel in Polar - you may need to cancel manually at polar.sh",
+          ? "Subscription cancelled successfully. Access revoked immediately."
+          : "Subscription cancelled locally. Access revoked. Note: Could not cancel in Polar - you may need to cancel manually at polar.sh",
         localOnly: !polarCancelSuccess
       });
     }
@@ -160,7 +222,17 @@ export async function POST(request: NextRequest) {
             console.error("Error updating Stripe subscriptions:", stripeError);
           }
 
-          console.log('✅ Stripe subscription set to cancel at period end for user:', user.id);
+          // Revoke access immediately for Stripe subscriptions too
+          await supabase
+            .from("users")
+            .update({
+              subscription_status: "inactive",
+              subscription_expires_at: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", user.id);
+
+          console.log('✅ Stripe subscription cancelled and access revoked immediately for user:', user.id);
         } catch (stripeError: any) {
           console.error("Failed to cancel in Stripe:", stripeError);
           return NextResponse.json(
@@ -180,7 +252,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Subscription will be cancelled at the end of the billing period",
+      message: "Subscription cancelled successfully. Access revoked immediately.",
     });
 
   } catch (error: any) {

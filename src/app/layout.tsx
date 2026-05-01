@@ -1,4 +1,3 @@
-import { TempoInit } from "@/components/tempo-init";
 import VisitorTracker from "@/components/visitor-tracker";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -19,11 +18,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <Script src="https://api.tempolabs.ai/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js" />
       <body className={inter.className}>
         {children}
         <VisitorTracker />
-        <TempoInit />
       </body>
     </html>
   );

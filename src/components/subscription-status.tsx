@@ -34,25 +34,53 @@ export default function SubscriptionStatus() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Not authenticated");
 
-        const [stripeRes, polarRes, kpayRes, userRes] = await Promise.all([
-          supabase.from("subscriptions").select("*").eq("user_id", user.id).eq("status", "active").maybeSingle(),
-          supabase.from("polar_subscriptions").select("*").eq("user_id", user.id).eq("status", "active").maybeSingle(),
-          supabase.from("kpay_transactions").select("*").eq("user_id", user.id).eq("status", "completed").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-          supabase.from("users").select("has_trial_access, subscription_status, subscription_expires_at").eq("id", user.id).single()
-        ]);
+        // Check users table first (single source of truth)
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("has_trial_access, subscription_status, subscription_expires_at")
+          .eq("id", user.id)
+          .single();
 
-        const hasStripe = !!stripeRes.data;
-        const hasPolar = !!polarRes.data;
-        const hasKpay = !!kpayRes.data && userRes.data?.subscription_status === "active";
-        const hasTrialAccess = userRes.data?.has_trial_access || false;
+        if (userError) throw userError;
 
+        // Check if user has active subscription based on users table
+        const hasActiveFromUsers = 
+          userData?.subscription_status === 'active' && 
+          userData?.subscription_expires_at &&
+          new Date(userData.subscription_expires_at) > new Date();
+
+        const hasTrialAccess = userData?.has_trial_access || false;
+
+        // If users table shows active, check which provider
         let subscriptionDetails = null;
-        if (hasStripe) subscriptionDetails = { provider: "stripe", details: stripeRes.data };
-        else if (hasPolar) subscriptionDetails = { provider: "polar", details: polarRes.data };
-        else if (hasKpay) subscriptionDetails = { provider: "kpay", details: { current_period_end: userRes.data?.subscription_expires_at } };
+        if (hasActiveFromUsers) {
+          // Try to get details from provider tables
+          const [stripeRes, polarRes, kpayRes] = await Promise.all([
+            supabase.from("subscriptions").select("*").eq("user_id", user.id).eq("status", "active").maybeSingle(),
+            supabase.from("polar_subscriptions").select("*").eq("user_id", user.id).eq("status", "active").maybeSingle(),
+            supabase.from("kpay_transactions").select("*").eq("user_id", user.id).eq("status", "completed").order("created_at", { ascending: false }).limit(1).maybeSingle()
+          ]);
+
+          if (stripeRes.data) {
+            subscriptionDetails = { provider: "stripe", details: stripeRes.data };
+          } else if (polarRes.data) {
+            subscriptionDetails = { provider: "polar", details: polarRes.data };
+          } else if (kpayRes.data) {
+            subscriptionDetails = { provider: "kpay", details: { current_period_end: userData?.subscription_expires_at } };
+          } else {
+            // No provider details found, but users table shows active - use generic details
+            subscriptionDetails = { 
+              provider: "polar", // Assume Polar since that's what you're using
+              details: { 
+                current_period_end: userData?.subscription_expires_at,
+                status: 'active'
+              } 
+            };
+          }
+        }
 
         setSubscriptionData({
-          hasActiveSubscription: hasStripe || hasPolar || hasKpay,
+          hasActiveSubscription: hasActiveFromUsers,
           hasTrialAccess,
           subscriptionDetails
         });
@@ -377,36 +405,8 @@ export default function SubscriptionStatus() {
 
             {/* Subscription Management Buttons */}
             {subscriptionData?.hasActiveSubscription && (
-              <div className="mt-6 pt-4 border-t space-y-3">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Manage Subscription
-                </p>
-                
-                <div className="flex flex-col sm:flex-row gap-2">
-                  {/* Manage/Portal Button */}
-                  {(subscriptionData.subscriptionDetails.provider === "stripe" || 
-                    subscriptionData.subscriptionDetails.provider === "polar") && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleManageSubscription}
-                      disabled={creatingPortal}
-                      className="flex-1"
-                    >
-                      {creatingPortal ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Manage Billing
-                        </>
-                      )}
-                    </Button>
-                  )}
-
+              <div className="mt-6 pt-4 border-t">
+                <div className="flex gap-2">
                   {/* Cancel Button */}
                   {!subscriptionData.subscriptionDetails.details?.cancel_at_period_end && (
                     <AlertDialog>
@@ -415,7 +415,6 @@ export default function SubscriptionStatus() {
                           variant="destructive"
                           size="sm"
                           disabled={cancelling}
-                          className="flex-1"
                         >
                           {cancelling ? (
                             <>

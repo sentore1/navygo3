@@ -113,6 +113,8 @@ export async function POST(request: NextRequest) {
 
           if (updateError) {
             console.error("Error updating user:", updateError);
+          } else {
+            console.log("✅ User subscription_status updated to active");
           }
 
           const { error: subError } = await supabase
@@ -197,6 +199,8 @@ export async function POST(request: NextRequest) {
 
         if (updateError) {
           console.error("Error updating user:", updateError);
+        } else {
+          console.log("✅ User subscription_status updated to active");
         }
 
         // Store subscription in polar_subscriptions table

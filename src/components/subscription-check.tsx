@@ -21,15 +21,20 @@ async function checkUserSubscription(userId: string): Promise<boolean> {
       return false;
     }
 
+    // Only allow access for active subscriptions with valid expiration
+    // Immediate revocation: canceled or inactive = no access
     if (userData?.subscription_status === 'active' && userData.subscription_expires_at) {
       const expiresAt = new Date(userData.subscription_expires_at);
-      if (expiresAt > new Date()) {
+      const now = new Date();
+      
+      if (expiresAt > now) {
         console.log("User has active subscription");
         return true;
       }
     }
 
-    console.log("No active subscription found");
+    // Block all other statuses: canceled, inactive, pending, or null
+    console.log(`Access denied - subscription status: ${userData?.subscription_status || 'none'}`);
     return false;
   } catch (err) {
     console.error("Subscription check error:", err);

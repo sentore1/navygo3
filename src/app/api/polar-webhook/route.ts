@@ -92,10 +92,13 @@ export async function POST(request: NextRequest) {
         const canceledUserId = canceledSub.metadata?.user_id;
 
         if (canceledUserId) {
+          // Set status to "inactive" and clear expiration to immediately revoke access
+          // This ensures users cannot access dashboard after cancellation is processed by Polar
           await supabase
             .from("users")
             .update({
               subscription_status: "inactive",
+              subscription_expires_at: null, // Clear expiration to revoke access immediately
               updated_at: new Date().toISOString(),
             })
             .eq("id", canceledUserId);
