@@ -407,6 +407,26 @@ export default function SubscriptionStatus() {
             {subscriptionData?.hasActiveSubscription && (
               <div className="mt-6 pt-4 border-t">
                 <div className="flex gap-2">
+                  {/* Manage Billing Button - Opens Polar Customer Portal */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleManageSubscription}
+                    disabled={creatingPortal}
+                  >
+                    {creatingPortal ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Manage Billing
+                      </>
+                    )}
+                  </Button>
+
                   {/* Cancel Button */}
                   {!subscriptionData.subscriptionDetails.details?.cancel_at_period_end && (
                     <AlertDialog>

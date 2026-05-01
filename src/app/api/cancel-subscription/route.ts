@@ -104,11 +104,11 @@ export async function POST(request: NextRequest) {
       console.log('Cancelling Polar subscription:', subscriptionId);
       console.log('Using Polar API URL:', apiUrl);
 
-      // Cancel subscription in Polar (sets cancel_at_period_end = true)
+      // Cancel subscription in Polar (immediate revocation using DELETE)
       let polarCancelSuccess = false;
       try {
-        const cancelResponse = await fetch(`${apiUrl}/v1/subscriptions/${subscriptionId}/cancel`, {
-          method: "POST",
+        const cancelResponse = await fetch(`${apiUrl}/v1/subscriptions/${subscriptionId}`, {
+          method: "DELETE",
           headers: {
             "Authorization": `Bearer ${polarApiKey}`,
             "Content-Type": "application/json",
