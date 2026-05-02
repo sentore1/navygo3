@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "NavyGoal - Achieve your hard goals",
   description: "Track your progress with beautiful charts and insights to stay motivated on your journey.",
+  verification: {
+    google: "9EU6qP2ai__zpCEYbio-Gbwr9KTMh2HgPgEHhYjxtTQ",
+  },
 };
 
 export default function RootLayout({
