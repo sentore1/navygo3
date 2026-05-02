@@ -22,7 +22,7 @@ export function GoogleOAuthButton({ redirectTo = "/dashboard" }: GoogleOAuthButt
           redirectTo: `${window.location.origin}/auth/callback?redirect_to=${redirectTo}`,
           queryParams: {
             access_type: "offline",
-            prompt: "consent",
+            prompt: "select_account",
           },
         },
       });

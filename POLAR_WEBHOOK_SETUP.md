@@ -1,267 +1,233 @@
-# Polar Webhook Setup Guide
+# Polar Webhook Setup for navygoall.com
 
-## What is a Webhook?
+## You Have Two Webhook Options
 
-A webhook is how Polar notifies your app when something happens (like a new subscription, payment, or cancellation). Your app needs to listen for these notifications to update user subscription status.
+Your app has **two webhook handlers**. Choose the one that matches your deployment:
 
-## Step-by-Step Setup
+---
 
-### Step 1: Deploy Your App (or Use Ngrok for Testing)
+## Option 1: Next.js API Route (Recommended for Vercel/Standard Hosting)
 
-Webhooks need a public URL. You have two options:
+**Use this if you're deploying to Vercel, Netlify, or any standard Next.js hosting.**
 
-#### Option A: Use Your Production URL (Recommended)
-If your app is deployed:
+### Webhook URL:
 ```
-https://navygoal.com/api/polar-webhook
+https://navygoall.com/api/polar-webhook
 ```
 
-#### Option B: Use Ngrok for Local Testing
-If testing locally:
+### Setup Steps:
 
-1. Install ngrok: https://ngrok.com/download
-2. Run your app: `npm run dev`
-3. In another terminal, run:
+1. **Configure in Polar Dashboard**
+   - Go to: https://polar.sh/dashboard/settings/webhooks
+   - Click **"Add Webhook"**
+   - Enter URL: `https://navygoall.com/api/polar-webhook`
+   - Select events:
+     - ✅ `subscription.created`
+     - ✅ `subscription.updated`
+     - ✅ `subscription.canceled`
+     - ✅ `checkout.created`
+     - ✅ `checkout.updated`
+   - **Save** and copy the **Webhook Secret**
+
+2. **Update .env.local**
+   ```bash
+   POLAR_WEBHOOK_SECRET=polar_whs_YOUR_LIVE_SECRET_HERE
+   ```
+
+3. **Deploy to Production**
+   - Make sure `POLAR_WEBHOOK_SECRET` is set in your hosting environment variables
+   - The webhook will be available at `https://navygoall.com/api/polar-webhook`
+
+### Handler Location:
+`src/app/api/polar-webhook/route.ts`
+
+---
+
+## Option 2: Supabase Edge Function
+
+**Use this if you want webhooks to run on Supabase infrastructure.**
+
+### Webhook URL:
+```
+https://rilhdwxirwxqfgsqpiww.supabase.co/functions/v1/polar-webhook
+```
+
+### Setup Steps:
+
+1. **Deploy the Edge Function**
+   ```bash
+   cd navygoal
+   npx supabase functions deploy polar-webhook
+   ```
+
+2. **Set Supabase Secrets**
+   ```bash
+   npx supabase secrets set POLAR_WEBHOOK_SECRET=polar_whs_YOUR_LIVE_SECRET_HERE
+   ```
+
+3. **Configure in Polar Dashboard**
+   - Go to: https://polar.sh/dashboard/settings/webhooks
+   - Click **"Add Webhook"**
+   - Enter URL: `https://rilhdwxirwxqfgsqpiww.supabase.co/functions/v1/polar-webhook`
+   - Select the same events as Option 1
+   - **Save**
+
+### Handler Location:
+`supabase/functions/polar-webhook/index.ts`
+
+---
+
+## Which Option Should You Use?
+
+### Use Option 1 (Next.js API Route) if:
+- ✅ You're deploying to Vercel, Netlify, or similar
+- ✅ You want everything in one place
+- ✅ You're already using Next.js API routes
+- ✅ **This is the simpler option for most cases**
+
+### Use Option 2 (Supabase Edge Function) if:
+- ✅ You want webhooks separate from your main app
+- ✅ You're using Supabase for other functions
+- ✅ You want webhooks to run even if your main app is down
+- ✅ You prefer serverless functions on Supabase
+
+---
+
+## Testing Your Webhook
+
+### 1. Test with Polar Dashboard
+
+1. Go to: https://polar.sh/dashboard/settings/webhooks
+2. Click on your webhook
+3. Click **"Send Test Event"**
+4. Check the response
+
+### 2. Check Logs
+
+**For Option 1 (Next.js):**
+- Check your hosting platform logs (Vercel, Netlify, etc.)
+- Look for: `"Polar webhook event:"`
+
+**For Option 2 (Supabase):**
 ```bash
-ngrok http 3000
-```
-4. Copy the HTTPS URL (e.g., `https://abc123.ngrok.io`)
-5. Your webhook URL will be:
-```
-https://abc123.ngrok.io/api/polar-webhook
+npx supabase functions logs polar-webhook
 ```
 
-### Step 2: Go to Polar Dashboard
+### 3. Test with Real Subscription
 
-1. Open https://polar.sh/dashboard
-2. Sign in to your account
-3. Select your organization
+1. Go to: https://navygoall.com/pricing
+2. Click **"Get It Done"** on any plan
+3. Complete checkout
+4. Check database:
 
-### Step 3: Navigate to Webhooks
-
-1. Click on **Settings** in the left sidebar
-2. Click on **Webhooks** (or **Developer** → **Webhooks**)
-3. Click **"Add Webhook"** or **"Create Webhook"** button
-
-### Step 4: Configure the Webhook
-
-Fill in the form:
-
-**Webhook URL:**
-```
-https://navygoal.com/api/polar-webhook
-```
-(or your ngrok URL for testing)
-
-**Events to Subscribe:**
-Select these events:
-- ✅ `subscription.created` - When a new subscription starts
-- ✅ `subscription.updated` - When subscription changes
-- ✅ `subscription.canceled` - When subscription is canceled
-- ✅ `checkout.created` - When checkout starts
-- ✅ `checkout.updated` - When checkout updates
-- ✅ `order.created` - When order is created
-
-**Description (optional):**
-```
-NavyGoal production webhook
+```sql
+SELECT * FROM polar_subscriptions ORDER BY created_at DESC LIMIT 1;
 ```
 
-### Step 5: Save and Get Webhook Secret
-
-1. Click **"Create"** or **"Save"**
-2. Polar will show you a **Webhook Secret** (looks like: `whsec_...`)
-3. **IMPORTANT:** Copy this secret immediately! You won't see it again.
-
-### Step 6: Add Secret to Environment Variables
-
-1. Open your `.env.local` file
-2. Update the webhook secret:
-
-```env
-POLAR_WEBHOOK_SECRET=whsec_your_actual_secret_here
-```
-
-3. Save the file
-4. Restart your development server:
-```bash
-npm run dev
-```
-
-### Step 7: Test the Webhook
-
-#### In Polar Dashboard:
-
-1. Go to Webhooks section
-2. Find your webhook
-3. Click **"Test"** or **"Send Test Event"**
-4. Select event type: `subscription.created`
-5. Click **"Send"**
-
-#### Check if it worked:
-
-1. Look at your terminal/console for logs
-2. Check Supabase → Table Editor → `webhook_events` table
-3. You should see a new row with the test event
-
-### Step 8: Verify in Production
-
-After deploying:
-
-1. Make a test subscription purchase
-2. Check that user's subscription status updates
-3. Verify in admin dashboard (`/admin`)
-4. Check `polar_subscriptions` table in Supabase
-
-## Webhook URL Format
-
-Your webhook endpoint is already created at:
-```
-/api/polar-webhook
-```
-
-Full URLs:
-- **Local (with ngrok):** `https://abc123.ngrok.io/api/polar-webhook`
-- **Production:** `https://navygoal.com/api/polar-webhook`
-
-## What the Webhook Does
-
-When Polar sends an event, your webhook:
-
-1. **Verifies the signature** (security check)
-2. **Processes the event:**
-   - `subscription.created` → Creates subscription record
-   - `subscription.updated` → Updates subscription status
-   - `subscription.canceled` → Marks subscription as inactive
-3. **Updates database:**
-   - Updates `users` table (subscription_status)
-   - Updates `polar_subscriptions` table
-   - Logs event in `webhook_events` table
+---
 
 ## Troubleshooting
 
-### Webhook Returns 401 Unauthorized
-
-**Problem:** Signature verification failed
-
-**Solution:**
-1. Check `POLAR_WEBHOOK_SECRET` in `.env.local`
-2. Make sure it matches the secret from Polar dashboard
-3. Restart your server after updating
-
 ### Webhook Returns 500 Error
 
-**Problem:** Server error processing webhook
+**Check:**
+1. `POLAR_WEBHOOK_SECRET` is set correctly
+2. Database connection is working
+3. Check logs for specific error
 
-**Solution:**
-1. Check server logs for error details
-2. Verify database tables exist (run migrations)
-3. Check Supabase connection
+### Subscription Not Created in Database
 
-### Events Not Updating Database
+**Check:**
+1. Webhook received the event (check logs)
+2. User exists in `users` table
+3. `polar_subscriptions` table exists
+4. RLS policies allow insertion
 
-**Problem:** Webhook receives events but doesn't update data
+### Webhook Signature Verification Failed
 
-**Solution:**
-1. Check that `user_id` is in the metadata
-2. Verify `polar_subscriptions` table exists
-3. Check Supabase logs for errors
-4. Ensure RLS policies allow updates
+**Check:**
+1. Webhook secret matches exactly (no extra spaces)
+2. Using the correct secret (live vs sandbox)
+3. Polar is sending the signature header
 
-### Can't Access Webhook URL
+---
 
-**Problem:** Polar can't reach your webhook
+## Current Sandbox Setup
 
-**Solution:**
-1. Make sure your app is deployed and running
-2. Check that URL is publicly accessible
-3. For local testing, use ngrok
-4. Verify no firewall blocking requests
-
-## Testing Checklist
-
-- [ ] Webhook URL is publicly accessible
-- [ ] Webhook secret is in `.env.local`
-- [ ] Server is running
-- [ ] Test event sent from Polar dashboard
-- [ ] Event appears in `webhook_events` table
-- [ ] Make test subscription purchase
-- [ ] User subscription status updates
-- [ ] Subscription appears in admin dashboard
-
-## Security Notes
-
-✅ **Webhook signature verification** - Prevents fake requests
-✅ **HTTPS only** - Encrypted communication
-✅ **Secret key** - Only Polar knows your secret
-✅ **Database RLS** - Row-level security protects data
-
-## Webhook Events Reference
-
-| Event | When It Fires | What It Does |
-|-------|---------------|--------------|
-| `subscription.created` | New subscription starts | Creates subscription record, activates user |
-| `subscription.updated` | Subscription changes | Updates subscription details |
-| `subscription.canceled` | User cancels | Deactivates subscription |
-| `checkout.created` | Checkout starts | Logs checkout event |
-| `checkout.updated` | Checkout updates | Logs checkout progress |
-| `order.created` | Order completed | Logs order (for one-time purchases) |
-
-## Environment Variables Needed
-
-```env
-# Polar Configuration
-POLAR_API_KEY=polar_oat_...
-POLAR_ORGANIZATION_ID=e80dcdcd-a93a-438c-91ef-d7981855377e
-POLAR_WEBHOOK_SECRET=whsec_your_secret_here
-
-# Supabase (for webhook to update database)
-SUPABASE_URL=https://rilhdwxirwxqfgsqpiww.supabase.co
-SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+You mentioned you used:
+```
+https://rilhdwxirwxqfgsqpiww.supabase.co/
 ```
 
-## Quick Setup Commands
+This is your **Supabase project URL**, not the webhook URL.
+
+### For Sandbox Testing:
+
+**If using Next.js API Route:**
+```
+https://your-dev-url.com/api/polar-webhook
+```
+
+**If using Supabase Edge Function:**
+```
+https://rilhdwxirwxqfgsqpiww.supabase.co/functions/v1/polar-webhook
+```
+
+---
+
+## Production Checklist
+
+- [ ] Choose Option 1 or Option 2
+- [ ] Get live Polar webhook secret
+- [ ] Update environment variables
+- [ ] Configure webhook in Polar dashboard
+- [ ] Test with "Send Test Event"
+- [ ] Test with real checkout
+- [ ] Verify subscription in database
+- [ ] Monitor logs for errors
+
+---
+
+## Quick Reference
+
+### Your URLs
+
+**Production Domain:** navygoall.com
+
+**Webhook Options:**
+- Next.js: `https://navygoall.com/api/polar-webhook`
+- Supabase: `https://rilhdwxirwxqfgsqpiww.supabase.co/functions/v1/polar-webhook`
+
+**Polar Dashboard:**
+- Webhooks: https://polar.sh/dashboard/settings/webhooks
+- Products: https://polar.sh/dashboard/products
+
+### Environment Variables
 
 ```bash
-# 1. Make sure your app is running
-npm run dev
+# Required for both options
+POLAR_WEBHOOK_SECRET=polar_whs_YOUR_LIVE_SECRET
 
-# 2. For local testing, start ngrok in another terminal
-ngrok http 3000
-
-# 3. Copy the ngrok URL and add /api/polar-webhook
-# Example: https://abc123.ngrok.io/api/polar-webhook
-
-# 4. Add this URL to Polar dashboard webhooks
-
-# 5. Test by sending a test event from Polar
+# Also needed
+POLAR_API_KEY=polar_oat_YOUR_LIVE_KEY
+POLAR_ORGANIZATION_ID=YOUR_LIVE_ORG_ID
+POLAR_API_URL=https://api.polar.sh
 ```
 
-## Next Steps
+---
 
-After webhook is set up:
+## Recommendation
 
-1. ✅ Test with a real subscription purchase
-2. ✅ Verify user gets access
-3. ✅ Check admin dashboard shows subscription
-4. ✅ Test subscription cancellation
-5. ✅ Monitor webhook logs for issues
+**For navygoall.com, I recommend Option 1 (Next.js API Route):**
 
-## Need Help?
+1. Simpler setup
+2. Everything in one deployment
+3. Easier to debug
+4. Works with any Next.js hosting
 
-If webhooks aren't working:
-
-1. Check Polar dashboard → Webhooks → Delivery logs
-2. Check your server logs
-3. Check Supabase logs
-4. Verify all environment variables are set
-5. Test with ngrok first before production
-
-## Webhook File Location
-
-The webhook handler is at:
+**Webhook URL to use:**
 ```
-src/app/api/polar-webhook/route.ts
+https://navygoall.com/api/polar-webhook
 ```
 
-You can add custom logic there if needed.
+Just make sure `POLAR_WEBHOOK_SECRET` is set in your production environment variables!
